@@ -1,0 +1,69 @@
+{
+    "info": {
+        "version": "1.0.0",
+        "title": "messagebroker",
+        "senti-name": "Senti Message Broker"
+    },
+    "securityDefinitions": {
+        "jwt": {
+            "type": "jwt",
+            "description": "",
+            "senti-authentication-url": {
+                "url": "http://localhost:1389"
+            }
+        },
+        "http": {
+            "type": "http",
+            "description": "",
+            "senti-authentication-url": {
+                "url": "http://localhost:8889/auth"
+            }
+        }
+    },
+    "baseRoute": "/messagebroker",
+    "routes": {
+        "/mqtt": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "200 OK"
+                    }
+                },
+                "security": [
+                    {
+                        "jwt": []
+                    }
+                ]
+            }
+        },
+        "/http": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "200 OK"
+                    }
+                },
+                "security": [
+                    {
+                        "http": []
+                    }
+                ]
+            }
+        }
+    },
+    "x-ibm-configuration": {
+        "assembly": {
+            "execute": [
+                {
+                    "invoke": {
+                        "title": "invoke",
+                        "target-url": "http://localhost:8889/"
+                    }
+                }
+            ]
+        }
+    },
+    "schemes" : [
+        "http"
+    ]
+}

@@ -1,0 +1,50 @@
+{
+	"name": "gateway",
+	"version": "0.0.4",
+	"deprecated": false,
+	"description": "Senti Gateway service",
+	"main": "server.js",
+	"scripts": {},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/senti-iot/senti-gateway.git"
+	},
+	"keywords": [
+		"Senti.Cloud",
+		"Senti.IoT",
+		"Senti",
+		"IoT",
+		"Gateway",
+		"Micro Service Gateway",
+		"NodeJS",
+		"Express",
+		"Micro Service"
+	],
+	"author": {
+		"name": "Christian Broberg",
+		"email": "apisupport@senti.cloud",
+		"url": "https://senti.io/"
+	},
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/senti-iot/senti-gateway/issues"
+	},
+	"homepage": "https://github.com/senti-iot/senti-gateway#readme",
+	"dependencies": {
+		"apisauce": "^1.1.1",
+		"cors": "^2.8.5",
+		"dotenv": "^8.2.0",
+		"express": "^4.17.1",
+		"express-pino-logger": "^4.0.0",
+		"find-config": "^1.0.0",
+		"helmet": "^3.21.2",
+		"moment": "^2.22.2",
+		"mqtt": "^2.18.8",
+		"pino": "^5.16.0",
+		"senti-apicore": "0.0.17"
+	},
+	"devDependencies": {
+		"eslint": "^6.7.2",
+		"eslint-config-google": "^0.14.0"
+	}
+}
