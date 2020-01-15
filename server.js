@@ -10,8 +10,8 @@ const helmet = require('helmet')
 const app = express()
 
 // API endpoint imports
-
-const port = process.env.NODE_PORT || 3007
+const test = require('./api/index')
+const port = process.env.NODE_PORT || 3023
 
 app.use(helmet())
 app.use(express.json())
@@ -19,6 +19,8 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use(cors())
 
+//---API---------------------------------------
+app.use([test])
 
 //---Start the express server---------------------------------------------------
 
