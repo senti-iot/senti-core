@@ -40,11 +40,14 @@
 		"helmet": "^3.21.2",
 		"moment": "^2.22.2",
 		"mqtt": "^2.18.8",
+		"mysql2": "^2.1.0",
 		"pino": "^5.16.0",
-		"senti-apicore": "0.0.17"
+		"senti-apicore": "0.0.17",
+		"uuid": "^3.3.3"
 	},
 	"devDependencies": {
-		"eslint": "^6.7.2",
+		"babel-eslint": "^10.0.3",
+		"eslint": "^6.8.0",
 		"eslint-config-google": "^0.14.0"
 	}
 }
