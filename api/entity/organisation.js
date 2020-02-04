@@ -53,7 +53,7 @@ router.post('/entity/organisation', async (req, res, next) => {
 		res.status(403).json()
 		return
 	}
-
+	
 	requestOrg.uuname = entity.getUUName(requestOrg.name)
 	let org = await entity.createOrganisation(requestOrg)
 	let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
@@ -336,7 +336,7 @@ router.post('/entity/organisation/import', async (req, res, next) => {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
 			'User-Agent': 'Senti.io v1',
-			'Authorization': 'Bearer 18d38a5cd8bb29f802d2cee51739611f1549b9730b8360739f6629f302121bed'
+			'Authorization': 'Bearer ' + req.body.token
 		}
 	})
 	let odeumOrgs = await betaBackend.get('core/orgs').then(rs => {
@@ -344,7 +344,7 @@ router.post('/entity/organisation/import', async (req, res, next) => {
 		return rs.data
 	})
 	let odeumToUUID = {
-		'-1': '0fd794c2-9de9-4c6d-8ec1-da53deaa5f56'
+		'-1': req.body.rootUUID
 	 }
 
 	 let counter = 0
