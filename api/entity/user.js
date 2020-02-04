@@ -169,7 +169,27 @@ router.delete('/entity/user/:uuid', async (req, res, next) => {
 	// ACL lease.uuid DELETE user req.params.uuid IN org req.body.org.uuid
 })
 
-
+router.put('/entity/user/:uuid/internal', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	// Test MY ACCESS
+	let acl = new aclClient()
+	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	if (access.allowed === false) {
+		res.status(403).json()
+		return
+	}
+	let entity = new entityService()
+	let user = await entity.getDbUserByUUID(req.params.uuid)
+	// Assign changed data and update user
+	// user.assignDiff(requestUser)
+	user.internal = req.body
+	await entity.updateUser(user)
+	res.status(200).json((await entity.getDbUserById(user.id)).internal)
+})
 
 
 router.get('/entity/user/init', async (req, res, next) => {

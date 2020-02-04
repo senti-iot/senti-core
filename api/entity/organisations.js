@@ -15,8 +15,10 @@ router.get('/entity/organisations', async (req, res, next) => {
 	}
 	let acl = new aclClient()
 
+	/* 	
 	let access = await acl.testPrivileges(lease.uuid, "768dd133-26d6-44a6-b992-33bc4cc55b66", [Privilege.organisation.read])
 	console.log(access)
+ 	*/
 
 	let resources = await acl.findResources(lease.uuid, '00000000-0000-0000-0000-000000000000', ResourceType.org, Privilege.organisation.read)
 	let entity = new entityService()

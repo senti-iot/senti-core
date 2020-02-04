@@ -367,6 +367,7 @@ router.post('/entity/organisation/import', async (req, res, next) => {
 		})
 		singleOdeumOrg.aux.odeumId = singleOdeumOrg.id
 		singleOdeumOrg.uuname = singleOdeumOrg.nickname
+		singleOdeumOrg.website = singleOdeumOrg.url
 		singleOdeumOrg.id = null
 		singleOdeumOrg.org = {
 			"uuid": odeumToUUID[odeumOrg.org.id]
