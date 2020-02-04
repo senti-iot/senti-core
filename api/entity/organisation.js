@@ -305,7 +305,7 @@ router.post('/entity/organisation/createroot', async (req, res, next) => {
 
 router.post('/entity/organisation/test', async (req, res, next) => {
 	const localBackend = createAPI({
-		baseURL: 'http://localhost:3024/',
+		baseURL: process.env.BACKENDTURL,
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
@@ -322,7 +322,7 @@ router.post('/entity/organisation/test', async (req, res, next) => {
 
 router.post('/entity/organisation/import', async (req, res, next) => {
 	const betaBackend = createAPI({
-		baseURL: 'https://betabackend.senti.cloud/rest/',
+		baseURL: process.env.OLDBACKENDTURL,
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
@@ -331,7 +331,7 @@ router.post('/entity/organisation/import', async (req, res, next) => {
 		}
 	})
 	const localBackend = createAPI({
-		baseURL: 'http://localhost:3024/',
+		baseURL: process.env.BACKENDTURL,
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
@@ -387,7 +387,7 @@ router.post('/entity/organisation/import', async (req, res, next) => {
 })
 router.post('/entity/organisation/importusers', async (req, res, next) => {
 	const betaBackend = createAPI({
-		baseURL: 'https://betabackend.senti.cloud/rest/',
+		baseURL: process.env.OLDBACKENDTURL,
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
@@ -396,7 +396,7 @@ router.post('/entity/organisation/importusers', async (req, res, next) => {
 		}
 	})
 	const localBackend = createAPI({
-		baseURL: 'http://localhost:3024/',
+		baseURL: process.env.BACKENDTURL,
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
