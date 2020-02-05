@@ -11,7 +11,7 @@ const aclClient = require('../../lib/acl/aclClient')
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
-router.get('/entity/user/:uuid', async (req, res, next) => {
+router.get('/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -36,7 +36,7 @@ router.get('/entity/user/:uuid', async (req, res, next) => {
 
 	res.status(200).json(user)
 })
-router.post('/entity/user', async (req, res, next) => {
+router.post('/entity/user', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -97,7 +97,7 @@ router.post('/entity/user', async (req, res, next) => {
 	}
 	res.status(200).json(user)
 })
-router.put('/entity/user/:uuid', async (req, res, next) => {
+router.put('/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -165,7 +165,7 @@ router.put('/entity/user/:uuid', async (req, res, next) => {
 	await entity.updateUser(user)
 	res.status(200).json(await entity.getUserById(user.id))
 })
-router.delete('/entity/user/:uuid', async (req, res, next) => {
+router.delete('/entity/user/:uuid', async (req, res) => {
 	// ACL lease.uuid DELETE user req.params.uuid IN org req.body.org.uuid
 })
 
@@ -192,7 +192,7 @@ router.put('/entity/user/:uuid/internal', async (req, res) => {
 })
 
 
-router.get('/entity/user/init', async (req, res, next) => {
+router.get('/entity/user/init', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()

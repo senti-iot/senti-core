@@ -3,7 +3,7 @@ const router = express.Router()
 const authService = require('../../lib/authentication/authService')
 const createAPI = require('apisauce').create
 
-router.get('/auth/google', async (req, res, next) => {
+router.get('/auth/google', async (req, res) => {
 	let auth = new authService()
 	let googleAPI = createAPI({
 		baseURL: 'https://oauth2.googleapis.com/',

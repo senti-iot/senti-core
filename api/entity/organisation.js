@@ -14,7 +14,7 @@ const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 const createAPI = require('apisauce').create
 
 
-router.get('/entity/organisation/:uuid', async (req, res, next) => {
+router.get('/entity/organisation/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -31,7 +31,7 @@ router.get('/entity/organisation/:uuid', async (req, res, next) => {
 	let organisation = await entity.getOrganisationByUUID(req.params.uuid)
 	res.status(200).json(organisation)
 })
-router.post('/entity/organisation', async (req, res, next) => {
+router.post('/entity/organisation', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -94,7 +94,7 @@ router.post('/entity/organisation', async (req, res, next) => {
 	let resultOrg = await entity.getOrganisationById(org.id)
 	res.status(200).json(resultOrg)
 })
-router.put('/entity/organisation/:uuid', async (req, res, next) => {
+router.put('/entity/organisation/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -138,7 +138,7 @@ router.put('/entity/organisation/:uuid', async (req, res, next) => {
 	let resultOrg = await entity.getOrganisationById(updatedOrg.id)
 	res.status(200).json(resultOrg)
 })
-router.delete('/entity/organisation/:uuid', async (req, res, next) => {
+router.delete('/entity/organisation/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -155,7 +155,7 @@ router.delete('/entity/organisation/:uuid', async (req, res, next) => {
 	//let deletedOrg = await entity.deleteOrganisation(org)
 	res.status(200).json()
 })
-router.get('/entity/organisation/:uuid/resourcegroups', async (req, res, next) => {
+router.get('/entity/organisation/:uuid/resourcegroups', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -177,7 +177,8 @@ router.get('/entity/organisation/:uuid/resourcegroups', async (req, res, next) =
 
 
 
-router.post('/entity/organisation/createroot', async (req, res, next) => {
+
+router.post('/entity/organisation/createroot', async (req, res) => {
 	let acl = new aclClient()
 	let entity = new entityService()
 	
@@ -303,7 +304,7 @@ router.post('/entity/organisation/createroot', async (req, res, next) => {
 	res.status(200).json(org)
 })
 
-router.post('/entity/organisation/test', async (req, res, next) => {
+router.post('/entity/organisation/test', async (req, res) => {
 	const localBackend = createAPI({
 		baseURL: process.env.BACKENDTURL,
 		headers: {
@@ -320,7 +321,7 @@ router.post('/entity/organisation/test', async (req, res, next) => {
 	res.status(200).json(test)
 })
 
-router.post('/entity/organisation/import', async (req, res, next) => {
+router.post('/entity/organisation/import', async (req, res) => {
 	const betaBackend = createAPI({
 		baseURL: process.env.OLDBACKENDTURL,
 		headers: {
@@ -386,7 +387,7 @@ router.post('/entity/organisation/import', async (req, res, next) => {
 	console.log(odeumToUUID)
 	res.status(200).json()
 })
-router.post('/entity/organisation/importusers', async (req, res, next) => {
+router.post('/entity/organisation/importusers', async (req, res) => {
 	const betaBackend = createAPI({
 		baseURL: process.env.OLDBACKENDTURL,
 		headers: {
@@ -460,7 +461,7 @@ router.post('/entity/organisation/importusers', async (req, res, next) => {
 
 })
 
-router.post('/entity/organisation/initroot', async (req, res, next) => {
+router.post('/entity/organisation/initroot', async (req, res) => {
 	let acl = new aclClient()
 	let entity = new entityService()
 	let requestOrg = new RequestOrganisation()
@@ -654,7 +655,7 @@ class HTTPError extends Error {
 		this.message = message
 	}
 }
-router.post('/entity/organisation/error', async (req, res, next) => {
+router.post('/entity/organisation/error', async (req, res) => {
 	try {
 		throw new HTTPError(401)
 	} 
