@@ -13,7 +13,6 @@ const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
 const createAPI = require('apisauce').create
 
-
 router.get('/entity/organisation/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
@@ -53,7 +52,6 @@ router.post('/entity/organisation', async (req, res) => {
 		res.status(403).json()
 		return
 	}
-	
 	requestOrg.uuname = entity.getUUName(requestOrg.name)
 	let org = await entity.createOrganisation(requestOrg)
 	let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)

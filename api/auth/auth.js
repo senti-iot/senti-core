@@ -36,7 +36,7 @@ router.delete('/auth/:token', async (req, res) => {
 	let auth = new authService()
 	let lease = await auth.getLease(auth.parseBearerToken(req))
 	if (lease !== false) {
-		res.status(200).json(lease)
+		res.status(200).json(await auth.expireLease(lease.token))
 	} else {
 		res.status(404).json(lease)
 	}
