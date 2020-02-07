@@ -2,10 +2,9 @@ const express = require('express')
 const router = express.Router()
 const authClient = require('../../lib/authentication/authClient')
 const entityService = require('../../lib/entity/entityService')
-const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
-
-const uuidv4 = require('uuid/v4');
 const sentiToken = require('../../lib/core/sentiToken')
+const sentiMail = require('../../lib/core/sentiMail')
+const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
 
 const aclClient = require('../../lib/acl/aclClient')
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
@@ -26,14 +25,6 @@ router.get('/entity/user/:uuid', async (req, res) => {
 	}
 	let entity = new entityService()
 	let user = await entity.getUserByUUID(req.params.uuid)
-
-	let dbUser = await entity.getDbUserByUUID(user.uuid)
-	let orgAclResources = await entity.getAclOrgResourcesOnName(dbUser.orgId)
-	console.log(orgAclResources)
-
-	let priv = await acl.listPrivileges(user.uuid, orgAclResources.aclorg.uuid)
-	console.log(priv)
-
 	res.status(200).json(user)
 })
 router.post('/entity/user', async (req, res) => {
@@ -91,11 +82,20 @@ router.post('/entity/user', async (req, res) => {
 	// Check state if i should create token and send mail
 	switch (user.state) {
 		case entityService.userState.confirm:
+			let mailService = new sentiMail()
+			let tokenService = new sentiToken()
+			let token = await tokenService.createUserToken(user.id, sentiToken.confirmUser, { days: 7 })
+			let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": user.firstName, "@TOKEN@": token.token, "@USERNAME@": user.userName })
+			msg.to = {
+				email: user.email,
+				name: user.firstName + ' ' + user.lastName
+			}
+			mailService.send(msg)
 			break;
 		case entityService.userState.approve:
 			break;
 	}
-	res.status(200).json(user)
+	res.status(200).json(await entity.getUserById(user.id))
 })
 router.put('/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)

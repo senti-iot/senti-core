@@ -21,6 +21,14 @@ router.get('/auth/user', async (req, res) => {
 		return
 	}
 	let entity = new entityService()
+	/*	
+	let dbUser = await entity.getDbUserByUUID(user.uuid)
+	let orgAclResources = await entity.getAclOrgResourcesOnName(dbUser.orgId)
+	console.log(orgAclResources)
+
+	let priv = await acl.listPrivileges(user.uuid, orgAclResources.aclorg.uuid)
+	console.log(priv)
+	*/
 	res.status(200).json(await entity.getInternalUserByUUID(lease.uuid))
 })
 router.get('/auth/:token', async (req, res) => {
