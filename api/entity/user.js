@@ -5,6 +5,7 @@ const entityService = require('../../lib/entity/entityService')
 const sentiToken = require('../../lib/core/sentiToken')
 const sentiMail = require('../../lib/core/sentiMail')
 const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
+const RequestCredentials = require('../../lib/entity/dataClasses/RequestCredentials')
 
 const aclClient = require('../../lib/acl/aclClient')
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
@@ -70,32 +71,32 @@ router.post('/entity/user', async (req, res) => {
 
 	let orgAclResources = await entity.getAclOrgResourcesOnName(requestUser.orgId)
 
-	let user = await entity.createUser(requestUser)
-	await acl.registerEntity(user.uuid)
-	await acl.addEntityToParent(user.uuid, requestUserRole.aclUUID)
+	let dbUser = await entity.createUser(requestUser)
+	await acl.registerEntity(dbUser.uuid)
+	await acl.addEntityToParent(dbUser.uuid, requestUserRole.aclUUID)
 
-	await acl.registerResource(user.uuid, ResourceType.user)
-	await acl.addResourceToParent(user.uuid, orgAclResources.users.uuid)
+	await acl.registerResource(dbUser.uuid, ResourceType.user)
+	await acl.addResourceToParent(dbUser.uuid, orgAclResources.users.uuid)
 
 	// LOOP GROUPS AND ADD USER TO RESOURCE GROUPS -- and maybe later also entity groups(for special privileges)
 
 	// Check state if i should create token and send mail
-	switch (user.state) {
+	switch (dbUser.state) {
 		case entityService.userState.confirm:
 			let mailService = new sentiMail()
 			let tokenService = new sentiToken()
-			let token = await tokenService.createUserToken(user.id, sentiToken.confirmUser, { days: 7 })
-			let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": user.firstName, "@TOKEN@": token.token, "@USERNAME@": user.userName })
+			let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
+			let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })
 			msg.to = {
-				email: user.email,
-				name: user.firstName + ' ' + user.lastName
+				email: dbUser.email,
+				name: dbUser.firstName + ' ' + dbUser.lastName
 			}
 			mailService.send(msg)
 			break;
 		case entityService.userState.approve:
 			break;
 	}
-	res.status(200).json(await entity.getUserById(user.id))
+	res.status(200).json(await entity.getUserById(dbUser.id))
 })
 router.put('/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
@@ -191,7 +192,173 @@ router.put('/entity/user/:uuid/internal', async (req, res) => {
 	res.status(200).json((await entity.getDbUserById(user.id)).internal)
 })
 
+router.post('/entity/user/confirm', async (req, res) => {
+	let credentials = new RequestCredentials(req.body)
+	let tokenService = new sentiToken()
+	let userToken = await tokenService.getUserTokenByTokenAndType(credentials.token, sentiToken.confirmUser)
+	if (userToken === false) {
+		res.status(404).json()
+		return
+	}
+	let entity = new entityService()
+	let dbUser = await entity.getDbUserByUUID(userToken.uuid)
+	if (dbUser === false) {
+		res.status(404).json()
+		return
+	}
+	credentials.id = dbUser.id
+	let pwsuccess = await entity.setUserPassword(credentials)
+	if (pwsuccess === false) {
+		res.status(500).json()
+		return
+	}
+	let statesuccess = await entity.setUserState(dbUser.id, 0)
+	if (statesuccess === false) {
+		res.status(500).json()
+		return
+	}	
+	let mailService = new sentiMail()
+	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName })
+	msg.to = {
+		email: dbUser.email,
+		name: dbUser.firstName + ' ' + dbUser.lastName
+	}
+	mailService.send(msg)
+	res.status(200).json(true)
+})
+router.post('/entity/user/forgotpassword', async (req, res) => {
+	if (!req.body.email) {
+		res.status(400).json()
+		return
+	}
+	let entity = new entityService()
+	let dbUser = await entity.getDbUserByUserName(req.body.email)
+	if (dbUser === false) {
+		res.status(404).json()
+		return
+	}
+	if (dbUser.state > 0) {
+		res.status(400).json()
+		return
+	}
+	let mailService = new sentiMail()
+	let tokenService = new sentiToken()
+	let token = await tokenService.createUserToken(dbUser.id, sentiToken.forgotPassword, { days: 1 })
+	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.forgotPassword, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })
+	msg.to = {
+		email: dbUser.email,
+		name: dbUser.firstName + ' ' + dbUser.lastName
+	}
+	mailService.send(msg)
+	res.status(200).json()
+})
+router.post('/entity/user/forgotpassword/set', async (req, res) => {
+	let credentials = new RequestCredentials(req.body)
+	let tokenService = new sentiToken()
+	let userToken = await tokenService.getUserTokenByTokenAndType(credentials.token, sentiToken.forgotPassword)
+	if (userToken === false) {
+		res.status(404).json()
+		return
+	}
+	let entity = new entityService()
+	let dbUser = await entity.getDbUserByUUID(userToken.uuid)
+	if (dbUser === false) {
+		res.status(404).json()
+		return
+	}
+	credentials.id = dbUser.id
+	let pwsuccess = await entity.setUserPassword(credentials)
+	if (pwsuccess === false) {
+		res.status(500).json()
+		return
+	}
+	let mailService = new sentiMail()
+	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName })
+	msg.to = {
+		email: dbUser.email,
+		name: dbUser.firstName + ' ' + dbUser.lastName
+	}
+	mailService.send(msg)
+	tokenService.clearTokensByUserId(dbUser.id, sentiToken.forgotPassword)
+	res.status(200).json(true)
+})
+router.post('/entity/user/:uuid/setpassword', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	// Test MY ACCESS
+	let acl = new aclClient()
+	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	if (access.allowed === false) {
+		res.status(403).json()
+		return
+	}
+	let credentials = new RequestCredentials(req.body)
+	console.log(credentials)
+	if (lease.uuid === req.params.uuid) {
+		// check og valider eksisterende password
+	}
+	let entity = new entityService()
+	let dbUser = await entity.getDbUserByUUID(req.params.uuid)
+	if (dbUser === false) {
+		res.status(404).json()
+		return
+	}
+	credentials.id = dbUser.id
+	let pwsuccess = await entity.setUserPassword(credentials)
+	if (pwsuccess === false) {
+		res.status(500).json()
+		return
+	}
+	let mailService = new sentiMail()
+	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName })
+	msg.to = {
+		email: dbUser.email,
+		name: dbUser.firstName + ' ' + dbUser.lastName
+	}
+	mailService.send(msg)
+	res.status(200).json()
+})
+router.post('/entity/user/:uuid/resendconfirmmail', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	// Test MY ACCESS
+	let acl = new aclClient()
+	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	if (access.allowed === false) {
+		res.status(403).json()
+		return
+	}
+	let credentials = new RequestCredentials(req.body)
+	if (req.params.uuid !== credentials.uuid) {
+		res.status(400).json()
+		return
+	}
+	let entity = new entityService()
+	let dbUser = await entity.getDbUserByUUID(req.params.uuid)
+	if (dbUser === false) {
+		res.status(404).json()
+		return
+	}
+	let tokenService = new sentiToken()
+	tokenService.clearTokensByUserId(dbUser.id, sentiToken.confirmUser)
+	
+	let mailService = new sentiMail()
+	let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
+	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })
+	msg.to = {
+		email: dbUser.email,
+		name: dbUser.firstName + ' ' + dbUser.lastName
+	}
+	mailService.send(msg)
 
+	res.status(200).json()
+})
 router.get('/entity/user/init', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
