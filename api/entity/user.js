@@ -167,9 +167,22 @@ router.put('/entity/user/:uuid', async (req, res) => {
 	res.status(200).json(await entity.getUserById(user.id))
 })
 router.delete('/entity/user/:uuid', async (req, res) => {
-	// ACL lease.uuid DELETE user req.params.uuid IN org req.body.org.uuid
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	// Test MY ACCESS
+	let acl = new aclClient()
+	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.delete])
+	if (access.allowed === false) {
+		res.status(403).json()
+		return
+	}
+	let entity = new entityService()
+	let dbUser = await entity.getDbUserByUUID(req.params.uuid)
+	res.status(200).json(await entity.deleteUser(dbUser.id))
 })
-
 router.put('/entity/user/:uuid/internal', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
@@ -186,7 +199,6 @@ router.put('/entity/user/:uuid/internal', async (req, res) => {
 	let entity = new entityService()
 	let user = await entity.getDbUserByUUID(req.params.uuid)
 	// Assign changed data and update user
-	// user.assignDiff(requestUser)
 	user.internal = req.body
 	await entity.updateUser(user)
 	res.status(200).json((await entity.getDbUserById(user.id)).internal)
@@ -296,7 +308,6 @@ router.post('/entity/user/:uuid/setpassword', async (req, res) => {
 		return
 	}
 	let credentials = new RequestCredentials(req.body)
-	console.log(credentials)
 	if (lease.uuid === req.params.uuid) {
 		// check og valider eksisterende password
 	}
@@ -358,36 +369,5 @@ router.post('/entity/user/:uuid/resendconfirmmail', async (req, res) => {
 	mailService.send(msg)
 
 	res.status(200).json()
-})
-router.get('/entity/user/init', async (req, res) => {
-	let lease = await authClient.getLease(req)
-	if (lease === false) {
-		res.status(401).json()
-		return
-	}
-
-	let hack = 'ee53c864-d226-46da-ba8a-e28825940189'
-
-	let entity = new entityService()
-	let user = await entity.getUserByUUID(hack)
-	let acl = new aclClient()
-
-	/* let org = await entity.getDbOrganisationByUUID(req.params.uuid)
-	let orgAclResources = await entity.getAclOrgResourceGroupsOnName(org.id) */
-	await acl.registerResource(user.uuid, ResourceType.user)
-	await acl.addResourceToParent(user.uuid, user.org.uuid)
-
-
-	let access = await acl.testPrivileges(lease.uuid, user.uuid, [Privilege.user.read])
-	console.log(access)
-	if (access.allowed === false) {
-		res.status(403).json()
-		return
-	}
-
-
-	res.status(200).json(user)
-
-
 })
 module.exports = router
