@@ -5,7 +5,7 @@ const entityService = require('../../lib/entity/entityService')
 
 const aclClient = require('../../lib/acl/aclClient')
 
-router.get('/entity/roles', async (req, res) => {
+router.get('/v2/entity/roles', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()

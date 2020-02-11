@@ -11,7 +11,7 @@ const aclClient = require('../../lib/acl/aclClient')
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
-router.get('/entity/user/:uuid', async (req, res) => {
+router.get('/v2/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -28,7 +28,7 @@ router.get('/entity/user/:uuid', async (req, res) => {
 	let user = await entity.getUserByUUID(req.params.uuid)
 	res.status(200).json(user)
 })
-router.post('/entity/user', async (req, res) => {
+router.post('/v2/entity/user', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -98,7 +98,7 @@ router.post('/entity/user', async (req, res) => {
 	}
 	res.status(200).json(await entity.getUserById(dbUser.id))
 })
-router.put('/entity/user/:uuid', async (req, res) => {
+router.put('/v2/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -166,7 +166,7 @@ router.put('/entity/user/:uuid', async (req, res) => {
 	await entity.updateUser(user)
 	res.status(200).json(await entity.getUserById(user.id))
 })
-router.delete('/entity/user/:uuid', async (req, res) => {
+router.delete('/v2/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -181,9 +181,16 @@ router.delete('/entity/user/:uuid', async (req, res) => {
 	}
 	let entity = new entityService()
 	let dbUser = await entity.getDbUserByUUID(req.params.uuid)
-	res.status(200).json(await entity.deleteUser(dbUser.id))
+	let success = await entity.deleteUser(dbUser.id)
+	if (success === false) {
+		res.status(500).json()
+		return
+	}
+	await acl.deleteEntity(req.params.uuid)
+	await acl.deleteResource(req.params.uuid)
+	res.status(200).json()
 })
-router.put('/entity/user/:uuid/internal', async (req, res) => {
+router.put('/v2/entity/user/:uuid/internal', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -204,7 +211,7 @@ router.put('/entity/user/:uuid/internal', async (req, res) => {
 	res.status(200).json((await entity.getDbUserById(user.id)).internal)
 })
 
-router.post('/entity/user/confirm', async (req, res) => {
+router.post('/v2/entity/user/confirm', async (req, res) => {
 	let credentials = new RequestCredentials(req.body)
 	let tokenService = new sentiToken()
 	let userToken = await tokenService.getUserTokenByTokenAndType(credentials.token, sentiToken.confirmUser)
@@ -238,7 +245,7 @@ router.post('/entity/user/confirm', async (req, res) => {
 	mailService.send(msg)
 	res.status(200).json(true)
 })
-router.post('/entity/user/forgotpassword', async (req, res) => {
+router.post('/v2/entity/user/forgotpassword', async (req, res) => {
 	if (!req.body.email) {
 		res.status(400).json()
 		return
@@ -264,7 +271,7 @@ router.post('/entity/user/forgotpassword', async (req, res) => {
 	mailService.send(msg)
 	res.status(200).json()
 })
-router.post('/entity/user/forgotpassword/set', async (req, res) => {
+router.post('/v2/entity/user/forgotpassword/set', async (req, res) => {
 	let credentials = new RequestCredentials(req.body)
 	let tokenService = new sentiToken()
 	let userToken = await tokenService.getUserTokenByTokenAndType(credentials.token, sentiToken.forgotPassword)
@@ -294,7 +301,7 @@ router.post('/entity/user/forgotpassword/set', async (req, res) => {
 	tokenService.clearTokensByUserId(dbUser.id, sentiToken.forgotPassword)
 	res.status(200).json(true)
 })
-router.post('/entity/user/:uuid/setpassword', async (req, res) => {
+router.post('/v2/entity/user/:uuid/setpassword', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -332,7 +339,7 @@ router.post('/entity/user/:uuid/setpassword', async (req, res) => {
 	mailService.send(msg)
 	res.status(200).json()
 })
-router.post('/entity/user/:uuid/resendconfirmmail', async (req, res) => {
+router.post('/v2/entity/user/:uuid/resendconfirmmail', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -356,9 +363,12 @@ router.post('/entity/user/:uuid/resendconfirmmail', async (req, res) => {
 		res.status(404).json()
 		return
 	}
+	if (dbUser.state !== 2) {
+		res.status(400).json()
+		return
+	}
 	let tokenService = new sentiToken()
 	tokenService.clearTokensByUserId(dbUser.id, sentiToken.confirmUser)
-	
 	let mailService = new sentiMail()
 	let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })

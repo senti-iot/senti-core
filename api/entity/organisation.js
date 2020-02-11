@@ -9,7 +9,7 @@ const aclClient = require('../../lib/acl/aclClient')
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
-router.get('/entity/organisation/:uuid', async (req, res) => {
+router.get('/v2/entity/organisation/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -26,7 +26,7 @@ router.get('/entity/organisation/:uuid', async (req, res) => {
 	let organisation = await entity.getOrganisationByUUID(req.params.uuid)
 	res.status(200).json(organisation)
 })
-router.post('/entity/organisation', async (req, res) => {
+router.post('/v2/entity/organisation', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -88,7 +88,7 @@ router.post('/entity/organisation', async (req, res) => {
 	let resultOrg = await entity.getOrganisationById(org.id)
 	res.status(200).json(resultOrg)
 })
-router.put('/entity/organisation/:uuid', async (req, res) => {
+router.put('/v2/entity/organisation/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -132,7 +132,7 @@ router.put('/entity/organisation/:uuid', async (req, res) => {
 	let resultOrg = await entity.getOrganisationById(updatedOrg.id)
 	res.status(200).json(resultOrg)
 })
-router.delete('/entity/organisation/:uuid', async (req, res) => {
+router.delete('/v2/entity/organisation/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
@@ -149,7 +149,7 @@ router.delete('/entity/organisation/:uuid', async (req, res) => {
 	//let deletedOrg = await entity.deleteOrganisation(org)
 	res.status(200).json()
 })
-router.get('/entity/organisation/:uuid/resourcegroups', async (req, res) => {
+router.get('/v2/entity/organisation/:uuid/resourcegroups', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()

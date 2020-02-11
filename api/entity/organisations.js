@@ -7,7 +7,7 @@ const aclClient = require('../../lib/acl/aclClient')
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
-router.get('/entity/organisations', async (req, res) => {
+router.get('/v2/entity/organisations', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	console.log(lease)
 	if (lease === false) {
@@ -27,7 +27,7 @@ router.get('/entity/organisations', async (req, res) => {
 	res.status(200).json(await entity.getOrganisationsByUUID(queryUUIDs))
 })
 
-router.get('/entity/organisations/:uuid', async (req, res) => {
+router.get('/v2/entity/organisations/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()

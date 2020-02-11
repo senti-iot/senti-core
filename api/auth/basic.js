@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const authService = require('../../lib/authentication/authService')
 
-router.post('/auth/basic', async (req, res) => {
+router.post('/v2/auth/basic', async (req, res) => {
 	let auth = new authService()
 	let credentials = auth.parseBasicToken(req)
 	if (credentials === null) {
