@@ -279,7 +279,7 @@ router.post('/entity/user/import', async (req, res) => {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
 			'User-Agent': 'Senti.io v1',
-			'Authorization': 'Bearer 18d38a5cd8bb29f802d2cee51739611f1549b9730b8360739f6629f302121bed'
+			'Authorization': 'Bearer ' + req.body.token
 		}
 	})
 	//console.log('su, ac, u:', 136550100000143, 136550100000211, 136550100000225)
