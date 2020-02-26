@@ -1,5 +1,8 @@
 const express = require('express')
 const router = express.Router()
+
+const mysqlConn = require('../../mysql/mysql_handler')
+
 const authClient = require('../../lib/authentication/authClient')
 const entityService = require('../../lib/entity/entityService')
 const sentiToken = require('../../lib/core/sentiToken')
@@ -102,13 +105,13 @@ router.post('/entity/organisation/createroot', async (req, res) => {
 			//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
 		}))
 		// Alternativ til Promise.all
-		/* await Object.entries(orgRole.internal.initialPrivileges).reduce(async (promise, [key, privileges]) => {
-			// This line will wait for the last async function to finish.
-			// The first iteration uses an already resolved Promise
-			// so, it will immediately continue.
-			await promise;
-			await acl.addPrivileges(orgRole.uuid, aclOrgResources[key].uuid, privileges)
-		  }, Promise.resolve()); */
+		// await Object.entries(orgRole.internal.initialPrivileges).reduce(async (promise, [key, privileges]) => {
+		// 	// This line will wait for the last async function to finish.
+		// 	// The first iteration uses an already resolved Promise
+		// 	// so, it will immediately continue.
+		// 	await promise;
+		// 	await acl.addPrivileges(orgRole.uuid, aclOrgResources[key].uuid, privileges)
+		//   }, Promise.resolve());
 
 	}))
 	//console.log(orgRoles.filter(role => { return role.roleId === 1 })[0])
@@ -375,7 +378,7 @@ router.post('/entity/user/import', async (req, res) => {
 		await entity.setUserCreated(dbUser.id, extraOdeumUserData.created)
 		await entity.setUserPassword({ id: dbUser.id, newPassword: extraOdeumUserData.password }, importPWHash)
 		if (extraOdeumUserData.token !== null) {
-			let tokenService = new sentiToken()
+			let tokenService = new sentiToken(mysqlConn)
 			let token = await tokenService.createToken(extraOdeumUserData.token)
 			let usertoken = await tokenService.createUserTokenWithExixtingToken(token, dbUser.id, sentiToken.confirmUser, { "date": extraOdeumUserData.expire })
 			console.log(usertoken)
