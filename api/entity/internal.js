@@ -241,8 +241,8 @@ router.post('/entity/organisation/import', async (req, res) => {
 		}
 		console.log(singleOdeumOrg)
 
-		let test = await localBackend.post('entity/organisation', singleOdeumOrg).then(rs => {
-			console.log('entity/organisation', rs.ok)
+		let test = await localBackend.post('v2/entity/organisation', singleOdeumOrg).then(rs => {
+			console.log('v2/entity/organisation', rs.ok)
 			return rs.data
 		})
 		if (typeof odeumToUUID[odeumOrg.id] === 'undefined') {
@@ -296,8 +296,8 @@ router.post('/entity/user/import', async (req, res) => {
 	})
 	//console.log(odeumUsers)
 
-	let organisations = await localBackend.get('entity/organisations').then(rs => {
-		console.log('entity/organisations', rs.ok)
+	let organisations = await localBackend.get('v2/entity/organisations').then(rs => {
+		console.log('v2/entity/organisations', rs.ok)
 		return rs.data
 	})
 	//console.log(organisations)
@@ -358,8 +358,8 @@ router.post('/entity/user/import', async (req, res) => {
 
 		let requestUser = new RequestUser(singleOdeumUser)
 
-		let user = await localBackend.post('entity/user', requestUser).then(rs => {
-			console.log('entity/user', rs.ok)
+		let user = await localBackend.post('v2/entity/user', requestUser).then(rs => {
+			console.log('v2/entity/user', rs.ok)
 			if (!rs.ok) {
 				console.log(rs.status) // , rs.statusMessage
 				return false
