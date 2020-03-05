@@ -5,8 +5,10 @@ const mysqlConn = require('../../mysql/mysql_handler')
 
 const authClient = require('../../lib/authentication/authClient')
 const entityService = require('../../lib/entity/entityService')
-const sentiToken = require('../../lib/core/sentiToken')
-const sentiMail = require('../../lib/core/sentiMail')
+
+const sentiToken = require('senti-apicore').sentiToken
+const sentiMail = require('senti-apicore').sentiMail
+
 const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
 const RequestCredentials = require('../../lib/entity/dataClasses/RequestCredentials')
 
@@ -84,12 +86,16 @@ router.post('/v2/entity/user', async (req, res) => {
 	// LOOP GROUPS AND ADD USER TO RESOURCE GROUPS -- and maybe later also entity groups(for special privileges)
 
 	// Check state if i should create token and send mail
+
+	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	let tokenService = new sentiToken(mysqlConn)
+	let token
+	let msg
+
 	switch (dbUser.state) {
 		case entityService.userState.confirm:
-			let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
-			let tokenService = new sentiToken(mysqlConn)
-			let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
-			let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })
+			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
+			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })
 			msg.to = {
 				email: dbUser.email,
 				name: dbUser.firstName + ' ' + dbUser.lastName
@@ -97,6 +103,15 @@ router.post('/v2/entity/user', async (req, res) => {
 			mailService.send(msg)
 			break;
 		case entityService.userState.approve:
+			break;
+		case entityService.userState.confirmWithPassword:
+			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUserWithPassword, { days: 7 })
+			msg = await mailService.getMailMessageFromTemplateType(6, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })
+			msg.to = {
+				email: dbUser.email,
+				name: dbUser.firstName + ' ' + dbUser.lastName
+			}
+			mailService.send(msg)
 			break;
 	}
 	res.status(200).json(await entity.getUserById(dbUser.id))
@@ -246,6 +261,27 @@ router.post('/v2/entity/user/confirm', async (req, res) => {
 		name: dbUser.firstName + ' ' + dbUser.lastName
 	}
 	mailService.send(msg)
+	res.status(200).json(true)
+})
+router.post('/v2/entity/user/confirmwithpassword', async (req, res) => {
+	let credentials = new RequestCredentials(req.body)
+	let tokenService = new sentiToken(mysqlConn)
+	let userToken = await tokenService.getUserTokenByTokenAndType(credentials.token, sentiToken.confirmUserWithPassword)
+	if (userToken === false) {
+		res.status(404).json()
+		return
+	}
+	let entity = new entityService()
+	let dbUser = await entity.getDbUserByUUID(userToken.uuid)
+	if (dbUser === false) {
+		res.status(404).json()
+		return
+	}
+	let statesuccess = await entity.setUserState(dbUser.id, 0)
+	if (statesuccess === false) {
+		res.status(500).json()
+		return
+	}	
 	res.status(200).json(true)
 })
 router.post('/v2/entity/user/forgotpassword', async (req, res) => {

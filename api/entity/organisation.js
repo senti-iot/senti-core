@@ -49,6 +49,7 @@ router.post('/v2/entity/organisation', async (req, res) => {
 		return
 	}
 	requestOrg.uuname = entity.getUUName(requestOrg.name)
+	requestOrg.nickname = entity.getNickname(requestOrg.name)
 	let org = await entity.createOrganisation(requestOrg)
 	let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
 	let aclOrgResources = await entity.createAclOrgResources(org)
