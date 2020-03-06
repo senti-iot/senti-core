@@ -105,6 +105,10 @@ router.post('/v2/entity/user', async (req, res) => {
 		case entityService.userState.approve:
 			break;
 		case entityService.userState.confirmWithPassword:
+			if (requestUser.password !== false && requestUser.password !== '') {
+				let credentials = new RequestCredentials({ id: dbUser.id, newpassword: requestUser.password })
+				entity.setUserPassword(credentials)
+			}
 			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUserWithPassword, { days: 7 })
 			msg = await mailService.getMailMessageFromTemplateType(6, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName })
 			msg.to = {
