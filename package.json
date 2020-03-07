@@ -42,7 +42,7 @@
 		"mqtt": "^2.18.8",
 		"mysql2": "^2.1.0",
 		"senti-apicore": "0.0.40",
-		"uuid": "^3.3.3"
+		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
 		"babel-eslint": "^10.0.3",
