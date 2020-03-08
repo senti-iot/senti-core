@@ -77,11 +77,16 @@ router.post('/v2/entity/user', async (req, res) => {
 	let orgAclResources = await entity.getAclOrgResourcesOnName(requestUser.orgId)
 
 	let dbUser = await entity.createUser(requestUser)
+	// Register user
 	await acl.registerEntity(dbUser.uuid)
+	// Add user to Role
 	await acl.addEntityToParent(dbUser.uuid, requestUserRole.aclUUID)
-
+	// Register user as resource
 	await acl.registerResource(dbUser.uuid, ResourceType.user)
+	// Add resource to organisation
 	await acl.addResourceToParent(dbUser.uuid, orgAclResources.users.uuid)
+	// Give user permission to read, edit and delete there own resource
+	await acl.addPrivileges(dbUser.uuid, dbUser.uuid, [Privilege.user.read, Privilege.user.modify, Privilege.user.delete])
 
 	// LOOP GROUPS AND ADD USER TO RESOURCE GROUPS -- and maybe later also entity groups(for special privileges)
 
