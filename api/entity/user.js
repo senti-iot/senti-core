@@ -101,7 +101,7 @@ router.post('/v2/entity/user', async (req, res) => {
 	switch (dbUser.state) {
 		case entityService.userState.confirm:
 			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
-			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName }, wlHost)
+			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName, "@ORGNICKNAME@": parentOrg.nickname }, wlHost)
 			msg.to = {
 				email: dbUser.email,
 				name: dbUser.firstName + ' ' + dbUser.lastName
@@ -116,7 +116,7 @@ router.post('/v2/entity/user', async (req, res) => {
 				entity.setUserPassword(credentials)
 			}
 			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUserWithPassword, { days: 7 })
-			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirmHasPassword, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName }, wlHost)
+			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirmHasPassword, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName, "@ORGNICKNAME@": parentOrg.nickname }, wlHost)
 			msg.to = {
 				email: dbUser.email,
 				name: dbUser.firstName + ' ' + dbUser.lastName
