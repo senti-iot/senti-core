@@ -272,6 +272,7 @@ router.post('/v2/entity/user/confirm', async (req, res) => {
 		name: dbUser.firstName + ' ' + dbUser.lastName
 	}
 	mailService.send(msg)
+	tokenService.clearTokensByUserId(dbUser.id, sentiToken.confirmUser)
 	res.status(200).json(true)
 })
 router.post('/v2/entity/user/confirmwithpassword', async (req, res) => {
@@ -293,7 +294,8 @@ router.post('/v2/entity/user/confirmwithpassword', async (req, res) => {
 	if (statesuccess === false) {
 		res.status(500).json()
 		return
-	}	
+	}
+	tokenService.clearTokensByUserId(dbUser.id, sentiToken.confirmUserWithPassword)
 	res.status(200).json(true)
 })
 router.post('/v2/entity/user/forgotpassword', async (req, res) => {
