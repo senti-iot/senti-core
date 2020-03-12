@@ -5,7 +5,7 @@ const entityService = require('../../lib/entity/entityService')
 
 const RequestOrganisation = require('../../lib/entity/dataClasses/RequestOrganisation')
 
-const aclClient = require('../../lib/acl/aclClient')
+const aclClient = require('../../server').aclClient
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
@@ -16,8 +16,7 @@ router.get('/v2/entity/organisation/:uuid', async (req, res) => {
 		return
 	}
 	// ACL lease.uuid Privilege.organisation.read user req.params.uuid
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.read])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.read])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -32,7 +31,6 @@ router.post('/v2/entity/organisation', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	let acl = new aclClient()
 	let entity = new entityService()
 	let requestOrg = new RequestOrganisation(req.body)
 	let parentOrg = (requestOrg.org && requestOrg.org.uuid) ? await entity.getDbOrganisationByUUID(requestOrg.org.uuid) : await entity.getDbOrganisationById(1)
@@ -43,7 +41,7 @@ router.post('/v2/entity/organisation', async (req, res) => {
 	}
 	requestOrg.parentOrgId = parentOrg.id
 	// Test MY ACCESS
-	let access = await acl.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.organisation.create])
+	let access = await aclClient.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.organisation.create])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -54,35 +52,35 @@ router.post('/v2/entity/organisation', async (req, res) => {
 	let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
 	let aclOrgResources = await entity.createAclOrgResources(org)
 	// Register ACL ORG as resource
-	let aclOrgResource = await acl.registerResource(aclOrgResources['aclorg'].uuid, ResourceType.aclorg)
-	await acl.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
+	let aclOrgResource = await aclClient.registerResource(aclOrgResources['aclorg'].uuid, ResourceType.aclorg)
+	await aclClient.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
 
 	// Register org as entity
-	let orgEntity = await acl.registerEntity(org.uuid)
+	let orgEntity = await aclClient.registerEntity(org.uuid)
 	// Register org as resource under ACL ORG
-	let orgResource = await acl.registerResource(org.uuid, ResourceType.org)
+	let orgResource = await aclClient.registerResource(org.uuid, ResourceType.org)
 	if (orgEntity.uuid !== orgResource.uuid) {
 		console.log('Something went really wrong...')
 		res.status(400).json()
 		return
 	}
-	await acl.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
+	await aclClient.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
 	// Register aclOrgResources and add them to ORG
 	await Promise.all(Object.entries(aclOrgResources).map(async ([, aclResource]) => {
 		if (aclResource.type !== 1 && aclResource.type !== 3) {
-			await acl.registerResource(aclResource.uuid, aclResource.type)
-			await acl.addResourceToParent(aclResource.uuid, orgResource.uuid)
+			await aclClient.registerResource(aclResource.uuid, aclResource.type)
+			await aclClient.addResourceToParent(aclResource.uuid, orgResource.uuid)
 		}
 	}))
 	// Get organisation roles
 	let orgRoles = await entity.createAclOrganisationRoles(org.id)
 	await Promise.all(orgRoles.map(async (orgRole) => {
 		// Register role as entity under org
-		await acl.registerEntity(orgRole.aclUUID)
-		await acl.addEntityToParent(orgRole.aclUUID, orgEntity.uuid)
+		await aclClient.registerEntity(orgRole.aclUUID)
+		await aclClient.addEntityToParent(orgRole.aclUUID, orgEntity.uuid)
 		// Add initial privileges for role on org->aclResources
 		await Promise.all(Object.entries(orgRole.internal.initialPrivileges).map(async ([key, privileges]) => {
-			let p = await acl.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
+			let p = await aclClient.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
 			//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
 		}))
 	}))
@@ -95,11 +93,10 @@ router.put('/v2/entity/organisation/:uuid', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	let acl = new aclClient()
 	let entity = new entityService()
 	let requestOrg = new RequestOrganisation(req.body)
 	// Test MY ACCESS
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.modify])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.modify])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -116,7 +113,7 @@ router.put('/v2/entity/organisation/:uuid', async (req, res) => {
 
 	if (org.parentOrgId !== requestOrg.parentOrgId) {
 		console.log('Must change parent org')
-		let changeParentAccess = await acl.testPrivileges(lease.uuid, requestParentOrg.uuid, [Privilege.organisation.create])
+		let changeParentAccess = await aclClient.testPrivileges(lease.uuid, requestParentOrg.uuid, [Privilege.organisation.create])
 		if (changeParentAccess.allowed === false) {
 			res.status(403).json()
 			return
@@ -125,8 +122,8 @@ router.put('/v2/entity/organisation/:uuid', async (req, res) => {
 		let parentAclResources = await entity.getAclOrgResourcesOnName(org.parentOrgId)
 		let orgAclResources = await entity.getAclOrgResourcesOnName(org.id)
 
-		await acl.removeResourceFromParent(orgAclResources['aclorg'].uuid, parentAclResources['aclorg'].uuid)
-		await acl.addResourceToParent(orgAclResources['aclorg'].uuid, requestParentAclResources['aclorg'].uuid)
+		await aclClient.removeResourceFromParent(orgAclResources['aclorg'].uuid, parentAclResources['aclorg'].uuid)
+		await aclClient.addResourceToParent(orgAclResources['aclorg'].uuid, requestParentAclResources['aclorg'].uuid)
 	}
 	org.assignDiff(requestOrg);
 	let updatedOrg = await entity.updateOrganisation(org)
@@ -139,8 +136,7 @@ router.delete('/v2/entity/organisation/:uuid', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.delete])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.delete])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -156,8 +152,7 @@ router.get('/v2/entity/organisation/:uuid/resourcegroups', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.read])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.read])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return

@@ -9,6 +9,18 @@ const cors = require('cors')
 const helmet = require('helmet')
 const app = express()
 
+const sentiAuthClient = require('senti-apicore').sentiAuthClient
+const authClient = new sentiAuthClient(process.env.AUTHCLIENTURL, process.env.PASSWORDSALT)
+module.exports.authClient = authClient
+
+const sentiAclBackend = require('senti-apicore').sentiAclBackend
+const sentiAclClient = require('senti-apicore').sentiAclClient
+
+const aclBackend = new sentiAclBackend(process.env.ACLBACKENDTURL)
+const aclClient = new sentiAclClient(aclBackend)
+module.exports.aclClient = aclClient
+
+
 // API endpoint imports
 const test = require('./api/index')
 const auth = require('./api/auth/auth')

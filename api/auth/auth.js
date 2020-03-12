@@ -2,6 +2,10 @@ const express = require('express')
 const router = express.Router()
 
 const authService = require('../../lib/authentication/authService')
+
+const { sentiAclPriviledge, sentiAclResourceType } = require('senti-apicore')
+const aclClient = require('../../server').aclClient
+
 const entityService = require('../../lib/entity/entityService')
 
 router.get('/v2/auth', async (req, res) => {
@@ -21,7 +25,13 @@ router.get('/v2/auth/user', async (req, res) => {
 		return
 	}
 	let entity = new entityService()
-	res.status(200).json(await entity.getInternalUserByUUID(lease.uuid))
+	let internalUser = await entity.getInternalUserByUUID(lease.uuid)
+	let aclResources = await entity.getAclOrgResourcesOnName(await entity.getOrganisationIdByUUID(internalUser.org.uuid))
+	let userPrivileges = await aclClient.listPrivileges(lease.uuid, aclResources['appui'].uuid, true) 
+	internalUser.privileges = userPrivileges.privileges.map(item => {
+	 	return item.privilege
+	})
+	res.status(200).json(internalUser)
 })
 router.get('/v2/auth/:token', async (req, res) => {
 	let auth = new authService()

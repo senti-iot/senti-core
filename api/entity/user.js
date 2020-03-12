@@ -12,7 +12,7 @@ const sentiMail = require('senti-apicore').sentiMail
 const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
 const RequestCredentials = require('../../lib/entity/dataClasses/RequestCredentials')
 
-const aclClient = require('../../lib/acl/aclClient')
+const aclClient = require('../../server').aclClient
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
@@ -22,9 +22,7 @@ router.get('/v2/entity/user/:uuid', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	// ACL lease.uuid Privilege.user.read req.params.uuid
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.read])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.read])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -39,7 +37,6 @@ router.post('/v2/entity/user', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	let acl = new aclClient()
 	let entity = new entityService()
 	let requestUser = new RequestUser(req.body)
 	let parentOrg = (requestUser.org && requestUser.org.uuid) ? await entity.getDbOrganisationByUUID(requestUser.org.uuid) : 0
@@ -50,7 +47,7 @@ router.post('/v2/entity/user', async (req, res) => {
 	}
 	requestUser.orgId = parentOrg.id
 	// Test MY ACCESS
-	let access = await acl.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.user.create])
+	let access = await aclClient.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.user.create])
 	console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
@@ -78,15 +75,15 @@ router.post('/v2/entity/user', async (req, res) => {
 
 	let dbUser = await entity.createUser(requestUser)
 	// Register user
-	await acl.registerEntity(dbUser.uuid)
+	await aclClient.registerEntity(dbUser.uuid)
 	// Add user to Role
-	await acl.addEntityToParent(dbUser.uuid, requestUserRole.aclUUID)
+	await aclClient.addEntityToParent(dbUser.uuid, requestUserRole.aclUUID)
 	// Register user as resource
-	await acl.registerResource(dbUser.uuid, ResourceType.user)
+	await aclClient.registerResource(dbUser.uuid, ResourceType.user)
 	// Add resource to organisation
-	await acl.addResourceToParent(dbUser.uuid, orgAclResources.users.uuid)
+	await aclClient.addResourceToParent(dbUser.uuid, orgAclResources.users.uuid)
 	// Give user permission to read, edit and delete there own resource
-	await acl.addPrivileges(dbUser.uuid, dbUser.uuid, [Privilege.user.read, Privilege.user.modify, Privilege.user.delete])
+	await aclClient.addPrivileges(dbUser.uuid, dbUser.uuid, [Privilege.user.read, Privilege.user.modify, Privilege.user.delete])
 
 	// LOOP GROUPS AND ADD USER TO RESOURCE GROUPS -- and maybe later also entity groups(for special privileges)
 
@@ -142,8 +139,7 @@ router.put('/v2/entity/user/:uuid', async (req, res) => {
 	}
 	requestUser.orgId = requestOrg.id
 	// Test MY ACCESS
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.modify])
+	let access = await aclClient.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.modify])
 	console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
@@ -166,25 +162,25 @@ router.put('/v2/entity/user/:uuid', async (req, res) => {
 	// Check for ORG Changes
 	if (user.orgId !== requestUser.orgId) {
 		console.log('Must change parent org')
-		let changeParentAccess = await acl.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.create])
+		let changeParentAccess = await aclClient.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.create])
 		if (changeParentAccess.allowed === false) {
 			res.status(403).json()
 			return
 		}
-		await acl.removeEntityFromParent(user.uuid, userRole.aclUUID)
-		await acl.addEntityToParent(user.uuid, requestUserRole.aclUUID)
+		await aclClient.removeEntityFromParent(user.uuid, userRole.aclUUID)
+		await aclClient.addEntityToParent(user.uuid, requestUserRole.aclUUID)
 
 		let orgAclResources = await entity.getAclOrgResourcesOnName(user.orgId)
 		let requestOrgAclResources = await entity.getAclOrgResourcesOnName(requestUser.orgId)
 
-		await acl.removeResourceFromParent(user.uuid, orgAclResources.users.uuid)
-		await acl.addResourceToParent(user.uuid, requestOrgAclResources.users.uuid)
+		await aclClient.removeResourceFromParent(user.uuid, orgAclResources.users.uuid)
+		await aclClient.addResourceToParent(user.uuid, requestOrgAclResources.users.uuid)
 	}
 	
 	// Check for ROLE Changes
 	if (requestUser.roleId !== user.roleId) {
-		await acl.removeEntityFromParent(user.uuid, userRole.aclUUID)
-		await acl.addEntityToParent(user.uuid, requestUserRole.aclUUID)
+		await aclClient.removeEntityFromParent(user.uuid, userRole.aclUUID)
+		await aclClient.addEntityToParent(user.uuid, requestUserRole.aclUUID)
 	}
 
 	// LOOP GROUPS AND ADD USER TO RESOURCE GROUPS -- and maybe later also entity groups(for special privileges)
@@ -201,8 +197,7 @@ router.delete('/v2/entity/user/:uuid', async (req, res) => {
 		return
 	}
 	// Test MY ACCESS
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.delete])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.delete])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -214,8 +209,8 @@ router.delete('/v2/entity/user/:uuid', async (req, res) => {
 		res.status(500).json()
 		return
 	}
-	await acl.deleteEntity(req.params.uuid)
-	await acl.deleteResource(req.params.uuid)
+	await aclClient.deleteEntity(req.params.uuid)
+	await aclClient.deleteResource(req.params.uuid)
 	res.status(200).json()
 })
 router.put('/v2/entity/user/:uuid/internal', async (req, res) => {
@@ -225,8 +220,7 @@ router.put('/v2/entity/user/:uuid/internal', async (req, res) => {
 		return
 	}
 	// Test MY ACCESS
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -363,8 +357,7 @@ router.post('/v2/entity/user/:uuid/setpassword', async (req, res) => {
 		return
 	}
 	// Test MY ACCESS
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -402,8 +395,7 @@ router.post('/v2/entity/user/:uuid/resendconfirmmail', async (req, res) => {
 		return
 	}
 	// Test MY ACCESS
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return

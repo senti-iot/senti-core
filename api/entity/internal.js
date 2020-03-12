@@ -5,16 +5,20 @@ const mysqlConn = require('../../mysql/mysql_handler')
 
 const authClient = require('../../lib/authentication/authClient')
 const entityService = require('../../lib/entity/entityService')
-const sentiToken = require('../../lib/core/sentiToken')
+//const sentiToken = require('../../lib/core/sentiToken')
 
 const sendMail = require('../../lib/core/sentiMail')
+
+const sentiToken = require('senti-apicore').sentiToken
+const sentiMail = require('senti-apicore').sentiMail
 
 
 const RequestOrganisation = require('../../lib/entity/dataClasses/RequestOrganisation')
 const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
 const RequestCredentials = require('../../lib/entity/dataClasses/RequestCredentials')
 
-const aclClient = require('../../lib/acl/aclClient')
+const aclClient = require('../../server').aclClient
+
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
@@ -22,14 +26,26 @@ const createAPI = require('apisauce').create
 
 var moment = require('moment');
 
+router.get('/v1/internal/mail/test', async (req, res) => {
+
+	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : 'waterworks.senti.io'
+	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirmHasPassword, { "@FIRSTNAME@": 'Mikkel', "@TOKEN@": '12345', "@USERNAME@": 'mb@webhouse.dk', "@ORGNICKNAME@": 'jowjowfirma' }, wlHost)
+	msg.to = {
+		email: 'hhtest@odeum.com',
+		name: '`JOW JOW'
+	}
+	mailService.send(msg)
+	res.status(200).json(msg)
+})
+
 router.post('/v1/internal/mail/send', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
 		return
 	}
-	let acl = new aclClient()
-	let access = await acl.testPrivileges(lease.uuid, '00000000-0000-0000-0000-000000000000', [Privilege.internal.mail])
+	let access = await aclClient.testPrivileges(lease.uuid, '00000000-0000-0000-0000-000000000000', [Privilege.internal.mail])
 	console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
@@ -42,7 +58,6 @@ router.post('/v1/internal/mail/send', async (req, res) => {
 })
 
 router.post('/entity/organisation/createroot', async (req, res) => {
-	let acl = new aclClient()
 	let entity = new entityService()
 	
 	let org = await entity.getRootOrganisation()
@@ -67,21 +82,21 @@ router.post('/entity/organisation/createroot', async (req, res) => {
 	let aclOrgResources = await entity.createAclOrgResources(org)
 
 	// Register ACL ORG as resource
-	let aclOrgResource = await acl.registerResource(aclOrgResources.aclorg.uuid, ResourceType.aclorg)
+	let aclOrgResource = await aclClient.registerResource(aclOrgResources.aclorg.uuid, ResourceType.aclorg)
 	// Register org as entity
-	let orgEntity = await acl.registerEntity(org.uuid)
+	let orgEntity = await aclClient.registerEntity(org.uuid)
 	// Register org as resource under ACL ORG
-	let orgResource = await acl.registerResource(org.uuid, ResourceType.org)
+	let orgResource = await aclClient.registerResource(org.uuid, ResourceType.org)
 	if (orgEntity.uuid !== orgResource.uuid) {
 		console.log('Something went really wrong...')
 	}
-	await acl.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
+	await aclClient.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
 
 	// Register aclOrgResources and add them to ORG
 	await Promise.all(Object.entries(aclOrgResources).map(async ([, aclResource]) => {
 		if (aclResource.type !== 1 && aclResource.type !== 3) {
-			await acl.registerResource(aclResource.uuid, aclResource.type)
-			await acl.addResourceToParent(aclResource.uuid, orgResource.uuid)
+			await aclClient.registerResource(aclResource.uuid, aclResource.type)
+			await aclClient.addResourceToParent(aclResource.uuid, orgResource.uuid)
 		}
 	}))
 	
@@ -97,11 +112,11 @@ router.post('/entity/organisation/createroot', async (req, res) => {
 	console.log(orgRoles)
 	await Promise.all(orgRoles.map(async (orgRole) => {
 		// Register role as entity under org
-		await acl.registerEntity(orgRole.aclUUID)
-		await acl.addEntityToParent(orgRole.aclUUID, orgEntity.uuid)
+		await aclClient.registerEntity(orgRole.aclUUID)
+		await aclClient.addEntityToParent(orgRole.aclUUID, orgEntity.uuid)
 		// Add initial privileges for role on org->aclResources
 		await Promise.all(Object.entries(orgRole.internal.initialPrivileges).map(async ([key, privileges]) => {
-			let p = await acl.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
+			let p = await aclClient.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
 			//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
 		}))
 		// Alternativ til Promise.all
@@ -110,7 +125,7 @@ router.post('/entity/organisation/createroot', async (req, res) => {
 		// 	// The first iteration uses an already resolved Promise
 		// 	// so, it will immediately continue.
 		// 	await promise;
-		// 	await acl.addPrivileges(orgRole.uuid, aclOrgResources[key].uuid, privileges)
+		// 	await aclClient.addPrivileges(orgRole.uuid, aclOrgResources[key].uuid, privileges)
 		//   }, Promise.resolve());
 
 	}))
@@ -130,11 +145,11 @@ router.post('/entity/organisation/createroot', async (req, res) => {
 		requestUser.roleId = requestUser.role.roleId
 		administrator = await entity.createUser(requestUser)
 	}
-	await acl.registerEntity(administrator.uuid)
-	await acl.addEntityToParent(administrator.uuid, orgRoles.filter(role => { return role.roleId === 2 })[0].aclUUID)
+	await aclClient.registerEntity(administrator.uuid)
+	await aclClient.addEntityToParent(administrator.uuid, orgRoles.filter(role => { return role.roleId === 2 })[0].aclUUID)
 
-	await acl.registerResource(administrator.uuid, ResourceType.user)
-	await acl.addResourceToParent(administrator.uuid, aclOrgResources.users.uuid)
+	await aclClient.registerResource(administrator.uuid, ResourceType.user)
+	await aclClient.addResourceToParent(administrator.uuid, aclOrgResources.users.uuid)
 
 	let dbAdm = await entity.getDbUserByUUID(administrator.uuid)
 	let admPass = new RequestCredentials({ id: dbAdm.id, newPassword: req.body.admpass })
@@ -153,11 +168,11 @@ router.post('/entity/organisation/createroot', async (req, res) => {
 		requestSystemUser.roleId = requestSystemUser.role.roleId
 		systemuser = await entity.createUser(requestSystemUser)
 	}
-	await acl.registerEntity(systemuser.uuid)
-	await acl.addEntityToParent(systemuser.uuid, orgRoles.filter(role => { return role.roleId === 1 })[0].aclUUID)
+	await aclClient.registerEntity(systemuser.uuid)
+	await aclClient.addEntityToParent(systemuser.uuid, orgRoles.filter(role => { return role.roleId === 1 })[0].aclUUID)
 
-	await acl.registerResource(systemuser.uuid, ResourceType.user)
-	await acl.addResourceToParent(systemuser.uuid, aclOrgResources.users.uuid)
+	await aclClient.registerResource(systemuser.uuid, ResourceType.user)
+	await aclClient.addResourceToParent(systemuser.uuid, aclOrgResources.users.uuid)
 
 	let dbSys = await entity.getDbUserByUUID(systemuser.uuid)
 	let sysPass = new RequestCredentials({ id: dbSys.id, newPassword: req.body.syspass })
@@ -286,7 +301,7 @@ router.post('/entity/user/import', async (req, res) => {
 
 	/* 
 	let acl = new aclClient()
-	let resources = await acl.findResources(lease.uuid, '00000000-0000-0000-0000-000000000000', ResourceType.org, Privilege.organisation.read)
+	let resources = await aclClient.findResources(lease.uuid, '00000000-0000-0000-0000-000000000000', ResourceType.org, Privilege.organisation.read)
 	console.log(resources) */
 
 	 
@@ -396,7 +411,6 @@ router.post('/entity/user/import', async (req, res) => {
 })
 
 router.post('/entity/organisation/initroot', async (req, res) => {
-	let acl = new aclClient()
 	let entity = new entityService()
 	let requestOrg = new RequestOrganisation()
 
@@ -414,20 +428,20 @@ router.post('/entity/organisation/initroot', async (req, res) => {
 	// ER KOMMET HER TIL PÅ CREATEROOT
 
 	// Register ACL ORG as resource
-	let aclOrgResource = await acl.registerResource(aclResources['aclorg'].uuid, ResourceType.aclorg)
+	let aclOrgResource = await aclClient.registerResource(aclResources['aclorg'].uuid, ResourceType.aclorg)
 	// Register org as entity
-	let orgEntity = await acl.registerEntity(org.uuid)
+	let orgEntity = await aclClient.registerEntity(org.uuid)
 	// Register org as resource under ACL ORG
-	let orgResource = await acl.registerResource(org.uuid, ResourceType.org)
+	let orgResource = await aclClient.registerResource(org.uuid, ResourceType.org)
 	if (orgEntity.uuid !== orgResource.uuid) {
 		console.log('Something went really wrong...')
 	}
-	await acl.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
+	await aclClient.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
 	// Register aclResources and add them to ORG
 	Object.entries(aclResources).forEach(async ([, aclResource]) => {
 		if (aclResource.type !== 0 && aclResource.type !== 2) {
-			await acl.registerResource(aclResource.uuid, aclResource.type)
-			await acl.addResourceToParent(aclResource.uuid, orgResource.uuid)
+			await aclClient.registerResource(aclResource.uuid, aclResource.type)
+			await aclClient.addResourceToParent(aclResource.uuid, orgResource.uuid)
 		}
 	})
 	// Get organisation roles
@@ -435,16 +449,16 @@ router.post('/entity/organisation/initroot', async (req, res) => {
 
 	orgRoles.forEach(async orgRole => {
 		// Register role as entity under org
-		await acl.registerEntity(orgRole.uuid)
-		await acl.addEntityToParent(orgRole.uuid, orgEntity.uuid)
+		await aclClient.registerEntity(orgRole.uuid)
+		await aclClient.addEntityToParent(orgRole.uuid, orgEntity.uuid)
 		if (orgRole.type === 1) {
-			await acl.addEntityToParent("ee53c864-d226-46da-ba8a-e28825940189", orgRole.uuid)
+			await aclClient.addEntityToParent("ee53c864-d226-46da-ba8a-e28825940189", orgRole.uuid)
 		}
 
 		// Add initial privileges for role on org->aclResources
 		console.log(orgRole.internal.initialPrivileges)
 		Object.entries(orgRole.internal.initialPrivileges).forEach(async ([key, privileges]) => {
-			let p = await acl.addPrivileges(orgRole.uuid, aclResources[key].uuid, privileges)
+			let p = await aclClient.addPrivileges(orgRole.uuid, aclResources[key].uuid, privileges)
 			console.log(orgRole.uuid, aclResources[key].uuid, privileges, p)
 		})
 	})
