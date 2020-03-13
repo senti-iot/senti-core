@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const authClient = require('../../lib/authentication/authClient')
+const authClient = require('../../server').authClient
 const entityService = require('../../lib/entity/entityService')
 
 const RequestOrganisation = require('../../lib/entity/dataClasses/RequestOrganisation')

@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const authClient = require('../../lib/authentication/authClient')
+const authClient = require('../../server').authClient
 const entityService = require('../../lib/entity/entityService')
 
 const aclClient = require('../../server').aclClient
@@ -20,6 +20,7 @@ router.get('/v2/entity/role/:uuid/init', async (req, res) => {
 		res.status(401).json()
 		return
 	}
+	let result = []
 	let entity = new entityService()
 	let o = await entity.getDbOrganisationsByUUID([])
 	await o.reduce(async (promise, orgEntity) => {
@@ -39,10 +40,17 @@ router.get('/v2/entity/role/:uuid/init', async (req, res) => {
 		await Object.entries(orgRole.internal.initialPrivileges).reduce(async (promise, [key, privileges]) => {
 			console.log(key, privileges)
 			let p = await aclClient.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
+			result.push({
+				name: orgRole.name,
+				aclResource: aclOrgResources[key].uuid,
+				privilegeType: key,
+				privileges: privileges,
+				result: p
+			})
 		}, Promise.resolve());
 
 	}, Promise.resolve());
-	res.status(200).json(o)
+	res.status(200).json(result)
 })
 
 router.put('/v2/entity/roles/privileges', async (req, res) => {

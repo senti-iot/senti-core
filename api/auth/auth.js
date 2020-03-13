@@ -1,9 +1,6 @@
 const express = require('express')
 const router = express.Router()
-
 const authService = require('../../lib/authentication/authService')
-
-const { sentiAclPriviledge, sentiAclResourceType } = require('senti-apicore')
 const aclClient = require('../../server').aclClient
 
 const entityService = require('../../lib/entity/entityService')
@@ -17,6 +14,7 @@ router.get('/v2/auth', async (req, res) => {
 		res.status(404).json(lease)
 	}
 })
+
 router.get('/v2/auth/user', async (req, res) => {
 	let auth = new authService()
 	let lease = await auth.getLease(auth.parseBearerToken(req))

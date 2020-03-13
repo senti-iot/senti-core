@@ -3,7 +3,7 @@ const router = express.Router()
 
 const mysqlConn = require('../../mysql/mysql_handler')
 
-const authClient = require('../../lib/authentication/authClient')
+const authClient = require('../../server').authClient
 const entityService = require('../../lib/entity/entityService')
 
 const sentiToken = require('senti-apicore').sentiToken

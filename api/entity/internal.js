@@ -3,11 +3,8 @@ const router = express.Router()
 
 const mysqlConn = require('../../mysql/mysql_handler')
 
-const authClient = require('../../lib/authentication/authClient')
+const authClient = require('../../server').authClient
 const entityService = require('../../lib/entity/entityService')
-//const sentiToken = require('../../lib/core/sentiToken')
-
-const sendMail = require('../../lib/core/sentiMail')
 
 const sentiToken = require('senti-apicore').sentiToken
 const sentiMail = require('senti-apicore').sentiMail
@@ -23,8 +20,6 @@ const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
 const createAPI = require('apisauce').create
-
-var moment = require('moment');
 
 router.get('/v1/internal/mail/test', async (req, res) => {
 
