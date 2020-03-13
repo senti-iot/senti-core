@@ -213,6 +213,27 @@ router.delete('/v2/entity/user/:uuid', async (req, res) => {
 	await aclClient.deleteResource(req.params.uuid)
 	res.status(200).json()
 })
+router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	// Test MY ACCESS
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify, Privilege.user.changeparent])
+	if (access.allowed === false) {
+		res.status(403).json()
+		return
+	}
+	let entity = new entityService()
+	let internalUser = await entity.getInternalUserByUUID(req.params.uuid)
+	let aclResources = await entity.getAclOrgResourcesOnName(await entity.getOrganisationIdByUUID(internalUser.org.uuid))
+	let userPrivileges = await aclClient.listPrivileges(req.params.uuid, aclResources['appui'].uuid, true) 
+	internalUser.privileges = userPrivileges.privileges.map(item => {
+	 	return item.privilege
+	})
+	res.status(200).json(internalUser)
+})
 router.put('/v2/entity/user/:uuid/internal', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
