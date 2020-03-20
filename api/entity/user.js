@@ -215,12 +215,15 @@ router.delete('/v2/entity/user/:uuid', async (req, res) => {
 })
 router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
 	let lease = await authClient.getLease(req)
+	console.log(lease)
 	if (lease === false) {
 		res.status(401).json()
 		return
 	}
+
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify, Privilege.user.changeparent])
+	console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
