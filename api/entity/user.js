@@ -139,7 +139,12 @@ router.put('/v2/entity/user/:uuid', async (req, res) => {
 	}
 	requestUser.orgId = requestOrg.id
 	// Test MY ACCESS
-	let access = await aclClient.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.modify])
+	let access
+	if (lease.uuid === req.params.uuid) {
+		access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	} else {
+		access = await aclClient.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.modify])
+	}
 	console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
