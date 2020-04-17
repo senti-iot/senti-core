@@ -388,6 +388,7 @@ router.post('/v2/entity/user/:uuid/setpassword', async (req, res) => {
 	}
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
+	console.log('SET PW ACCESS', access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -398,6 +399,7 @@ router.post('/v2/entity/user/:uuid/setpassword', async (req, res) => {
 	}
 	let entity = new entityService()
 	let dbUser = await entity.getDbUserByUUID(req.params.uuid)
+	console.log('SET PW USER', dbUser)
 	if (dbUser === false) {
 		res.status(404).json()
 		return
