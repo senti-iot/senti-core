@@ -380,6 +380,7 @@ router.post('/v2/entity/user/forgotpassword/set', async (req, res) => {
 	res.status(200).json(true)
 })
 router.post('/v2/entity/user/:uuid/setpassword', async (req, res) => {
+	console.log('SET PASSWORD', req.params, req.headers, req.body)
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
