@@ -34,6 +34,30 @@ router.get('/v1/internal/mail/test', async (req, res) => {
 	res.status(200).json(msg)
 })
 
+
+router.get('/v2/internal/organisation/:uuid/fix', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	// ACL lease.uuid Privilege.organisation.read user req.params.uuid
+	// let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.read])
+	// if (access.allowed === false) {
+	// 	res.status(403).json()
+	// 	return
+	// }
+	let entity = new entityService()
+	let org = await entity.getOrganisationByUUID(req.params.uuid)
+	//let parentOrg = (requestOrg.org && requestOrg.org.uuid) ? await entity.getDbOrganisationByUUID(requestOrg.org.uuid) : await entity.getDbOrganisationById(1)
+
+	// let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
+	// let aclOrgResources = await entity.createAclOrgResources(org)
+
+
+	res.status(200).json(org)
+})
+
 router.post('/v1/internal/mail/send', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
