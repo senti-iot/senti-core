@@ -48,7 +48,7 @@ router.get('/v2/internal/organisation/:uuid/fix', async (req, res) => {
 	// 	return
 	// }
 	let entity = new entityService()
-	let org = await entity.getOrganisationByUUID(req.params.uuid)
+	let org = await entity.getDbOrganisationByUUID(req.params.uuid)
 	//let parentOrg = (requestOrg.org && requestOrg.org.uuid) ? await entity.getDbOrganisationByUUID(requestOrg.org.uuid) : await entity.getDbOrganisationById(1)
 
 	// let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
