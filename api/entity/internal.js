@@ -41,19 +41,45 @@ router.get('/v2/internal/organisation/:uuid/fix', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	// ACL lease.uuid Privilege.organisation.read user req.params.uuid
-	// let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.read])
-	// if (access.allowed === false) {
-	// 	res.status(403).json()
-	// 	return
-	// }
 	let entity = new entityService()
 	let org = await entity.getDbOrganisationByUUID(req.params.uuid)
-	//let parentOrg = (requestOrg.org && requestOrg.org.uuid) ? await entity.getDbOrganisationByUUID(requestOrg.org.uuid) : await entity.getDbOrganisationById(1)
 
-	// let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
-	// let aclOrgResources = await entity.createAclOrgResources(org)
+	let parentAclResources = await entity.getAclOrgResourcesOnName(org.parentOrgId)
+	let aclOrgResources = await entity.createAclOrgResources(org)
+	
+	// Register ACL ORG as resource
+	let aclOrgResource = await aclClient.registerResource(aclOrgResources['aclorg'].uuid, ResourceType.aclorg)
+	await aclClient.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
 
+	// Register org as entity
+	let orgEntity = await aclClient.registerEntity(org.uuid)
+	// Register org as resource under ACL ORG
+	let orgResource = await aclClient.registerResource(org.uuid, ResourceType.org)
+	if (orgEntity.uuid !== orgResource.uuid) {
+		console.log('Something went really wrong...')
+		res.status(400).json()
+		return
+	}
+	await aclClient.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
+	// Register aclOrgResources and add them to ORG
+	await Promise.all(Object.entries(aclOrgResources).map(async ([, aclResource]) => {
+		if (aclResource.type !== 1 && aclResource.type !== 3) {
+			await aclClient.registerResource(aclResource.uuid, aclResource.type)
+			await aclClient.addResourceToParent(aclResource.uuid, orgResource.uuid)
+		}
+	}))
+	// Get organisation roles
+	let orgRoles = await entity.createAclOrganisationRoles(org.id)
+	await Promise.all(orgRoles.map(async (orgRole) => {
+		// Register role as entity under org
+		await aclClient.registerEntity(orgRole.aclUUID)
+		await aclClient.addEntityToParent(orgRole.aclUUID, orgEntity.uuid)
+		// Add initial privileges for role on org->aclResources
+		await Promise.all(Object.entries(orgRole.internal.initialPrivileges).map(async ([key, privileges]) => {
+			let p = await aclClient.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
+			//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
+		}))
+	}))
 
 	res.status(200).json(org)
 })
