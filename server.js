@@ -32,6 +32,7 @@ const organisation = require('./api/entity/organisation')
 const organisations = require('./api/entity/organisations')
 const roles = require('./api/entity/roles')
 const internal = require('./api/entity/internal')
+const acltest = require('./api/acl/testResources')
 
 const port = process.env.NODE_PORT || 3024
 
@@ -45,6 +46,7 @@ app.use(cors())
 app.use([test])
 app.use([auth, basic, organisationAuth])
 app.use([user, users, organisation, organisations, roles, internal])
+app.use([acltest])
 
 //---Start the express server---------------------------------------------------
 
