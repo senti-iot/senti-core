@@ -6,7 +6,8 @@ router.post('/v2/auth/organisation', async (req, res) => {
 	let auth = new authService()
 	console.log('Org auth: ', req.body)
 	if (req.body.orgNickname && req.body.username && req.body.password) {
-		let lease = await auth.orgLogin(req.body.orgNickname, req.body.username, req.body.password)    
+		let lease = await auth.orgLogin(req.body.orgNickname, req.body.username, req.body.password)
+		console.log('Org auth: ', lease)    
 		if (lease !== false) {
 			res.status(200).json(lease)
 		} else {
