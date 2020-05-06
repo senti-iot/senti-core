@@ -12,7 +12,8 @@ router.get('/v2/entity/roles', async (req, res) => {
 		return
 	}
 	let entity = new entityService()
-	res.status(200).json(await entity.getRoles())
+	let user = await entity.getUserByUUID(lease.uuid)
+	res.status(200).json(await entity.getRoles(user.role.priority))
 })
 router.get('/v2/entity/role/:uuid/init', async (req, res) => {
 	let lease = await authClient.getLease(req)
