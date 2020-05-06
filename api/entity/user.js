@@ -209,7 +209,7 @@ router.delete('/v2/entity/user/:uuid', async (req, res) => {
 	}
 	let entity = new entityService()
 	let dbUser = await entity.getDbUserByUUID(req.params.uuid)
-	let success = await entity.deleteUser(dbUser.id)
+	let success = await entity.deleteUser(dbUser)
 	if (success === false) {
 		res.status(500).json()
 		return
