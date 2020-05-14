@@ -34,6 +34,7 @@ router.post('/v2/entity/organisation', async (req, res) => {
 	let entity = new entityService()
 	let requestOrg = new RequestOrganisation(req.body)
 	let parentOrg = (requestOrg.org && requestOrg.org.uuid) ? await entity.getDbOrganisationByUUID(requestOrg.org.uuid) : await entity.getDbOrganisationById(1)
+	console.log(parentOrg)
 	if (parentOrg.id === 0) {
 		//res.statusMessage = 'Bad request. Parent Organisation failure'
 		res.status(400).json()
@@ -49,6 +50,7 @@ router.post('/v2/entity/organisation', async (req, res) => {
 	requestOrg.uuname = entity.getUUName(requestOrg.name)
 	requestOrg.nickname = entity.getNickname(requestOrg.name)
 	let org = await entity.createOrganisation(requestOrg)
+	await entity.createCustomer(org)
 	let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
 	let aclOrgResources = await entity.createAclOrgResources(org)
 	// Register ACL ORG as resource
