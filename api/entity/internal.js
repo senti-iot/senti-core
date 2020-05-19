@@ -275,6 +275,8 @@ router.post('/entity/organisation/import', async (req, res) => {
 	 }
 
 	 let counter = 0
+	 
+	 let entity = new entityService()
 
 	// Alternativ til Promise.all
 	await Object.entries(odeumOrgs).reduce(async (promise, [key, odeumOrg]) => {
@@ -292,8 +294,15 @@ router.post('/entity/organisation/import', async (req, res) => {
 			console.log('core/org/' + odeumOrg.id, rs.ok)
 			return rs.data
 		})
+		let customerUUID = await entity.getCustomerUUID(singleOdeumOrg.id)
+		if (customerUUID !== false) {
+			singleOdeumOrg.uuname = customerUUID
+		} else {
+			singleOdeumOrg.uuname = entity.getUUName(singleOdeumOrg.name)
+			await entity.createOldCustomer(singleOdeumOrg.uuname, singleOdeumOrg.name, singleOdeumOrg.id)
+		}
+		singleOdeumOrg.nickname = (singleOdeumOrg.nickname !== "") ? singleOdeumOrg.nickname : entity.getNickname(singleOdeumOrg.name)
 		singleOdeumOrg.aux.odeumId = singleOdeumOrg.id
-		singleOdeumOrg.uuname = singleOdeumOrg.nickname
 		singleOdeumOrg.website = singleOdeumOrg.url
 		singleOdeumOrg.id = null
 		singleOdeumOrg.org = {
