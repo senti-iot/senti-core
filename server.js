@@ -9,9 +9,32 @@ const cors = require('cors')
 const helmet = require('helmet')
 const app = express()
 
+const sentiAuthClient = require('senti-apicore').sentiAuthClient
+const authClient = new sentiAuthClient(process.env.AUTHCLIENTURL, process.env.PASSWORDSALT)
+module.exports.authClient = authClient
+
+const sentiAclBackend = require('senti-apicore').sentiAclBackend
+const sentiAclClient = require('senti-apicore').sentiAclClient
+
+const aclBackend = new sentiAclBackend(process.env.ACLBACKENDTURL)
+const aclClient = new sentiAclClient(aclBackend)
+module.exports.aclClient = aclClient
+
+
 // API endpoint imports
 const test = require('./api/index')
-const port = process.env.NODE_PORT || 3023
+const auth = require('./api/auth/auth')
+const basic = require('./api/auth/basic')
+const organisationAuth = require('./api/auth/organisation')
+const user = require('./api/entity/user')
+const users = require('./api/entity/users')
+const organisation = require('./api/entity/organisation')
+const organisations = require('./api/entity/organisations')
+const roles = require('./api/entity/roles')
+const internal = require('./api/entity/internal')
+const acltest = require('./api/acl/testResources')
+
+const port = process.env.NODE_PORT || 3024
 
 app.use(helmet())
 app.use(express.json())
@@ -21,6 +44,9 @@ app.use(cors())
 
 //---API---------------------------------------
 app.use([test])
+app.use([auth, basic, organisationAuth])
+app.use([user, users, organisation, organisations, roles, internal])
+app.use([acltest])
 
 //---Start the express server---------------------------------------------------
 
