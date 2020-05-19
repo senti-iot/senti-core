@@ -1,0 +1,21 @@
+[Unit]
+# senti-core.service
+Description=Senti Core Merge
+Documentation=https://github.com/senti-iot/senti-core/blob/master/README.md
+# After=network.target
+
+[Service]
+WorkingDirectory=/srv/nodejs/senti/services/core/merge
+ExecStart=/usr/bin/node server.js
+Environment=NODE_PORT=5023
+Environment=NODE_ENV=merge
+Type=simple
+Restart=always
+# RestartSec=1
+StartLimitInterval=0
+User=root
+Group=root
+# KillSignal=SIGQUIT
+
+[Install]
+WantedBy=basic.target
