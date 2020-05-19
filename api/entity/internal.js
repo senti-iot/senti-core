@@ -524,8 +524,9 @@ async function localCreateRoles() {
 			arrPrivileges.push(privilege)
 		})
 	})
+	
 	await entity.dbSaveRole({ name: "System User", type: 1, priority: 0, "internal": { initialPrivileges: { aclorg: arrPrivileges } } })
-	await entity.dbSaveRole({ name: "Super User", type: 2, priority: 10, "internal": { initialPrivileges: { aclorg: arrPrivileges } } })
+	await entity.dbSaveRole({ name: "Super User", type: 2, priority: 10, "internal": { initialPrivileges: { appui: ["waterworks.data","waterworks.admin"], aclorg: arrPrivileges } } })
 	let aclorgPrivileges = [
 		"org.read",
 		"org.create",
@@ -634,6 +635,7 @@ async function localCreateRoles() {
 		"dashboard.delete",
 	]
 	await entity.dbSaveRole({ name: "User", type: 4, priority: 100, "internal": { initialPrivileges: { org: orgPrivileges } } })
+	await entity.dbSaveRole({ name: "Waterworks User", type: 5, priority: 1000, "internal": { initialPrivileges: { appui: ["waterworks.data"] } } })
 }
 
 class HTTPError extends Error {
