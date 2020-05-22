@@ -47,10 +47,10 @@ router.post('/v2/entity/organisation', async (req, res) => {
 		res.status(403).json()
 		return
 	}
-	requestOrg.uuname = entity.getUUName(requestOrg.name)
-	requestOrg.nickname = entity.getNickname(requestOrg.name)
+	requestOrg.uuname = (requestOrg.uuname) ? requestOrg.uuname : entity.getUUName(requestOrg.name)
+	requestOrg.nickname = (requestOrg.nickname) ? requestOrg.nickname : entity.getNickname(requestOrg.name)
 	let org = await entity.createOrganisation(requestOrg)
-	await entity.createCustomer(org)
+	// await entity.createCustomer(org)
 	let parentAclResources = await entity.getAclOrgResourcesOnName(parentOrg.id)
 	let aclOrgResources = await entity.createAclOrgResources(org)
 	// Register ACL ORG as resource

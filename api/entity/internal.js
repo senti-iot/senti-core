@@ -258,7 +258,7 @@ router.post('/entity/organisation/import', async (req, res) => {
 	})
 	
 	const localBackend = createAPI({
-		baseURL: 'http://127.0.0.1:3024/',
+		baseURL: process.env.BACKENDTURL,  //'http://127.0.0.1:5023/',
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
@@ -275,6 +275,8 @@ router.post('/entity/organisation/import', async (req, res) => {
 	 }
 
 	 let counter = 0
+	 
+	 let entity = new entityService()
 
 	// Alternativ til Promise.all
 	await Object.entries(odeumOrgs).reduce(async (promise, [key, odeumOrg]) => {
@@ -292,8 +294,15 @@ router.post('/entity/organisation/import', async (req, res) => {
 			console.log('core/org/' + odeumOrg.id, rs.ok)
 			return rs.data
 		})
+		let customerUUID = await entity.getCustomerUUID(singleOdeumOrg.id)
+		if (customerUUID !== false) {
+			singleOdeumOrg.uuname = customerUUID
+		} else {
+			singleOdeumOrg.uuname = entity.getUUName(singleOdeumOrg.name)
+			await entity.createOldCustomer(singleOdeumOrg.uuname, singleOdeumOrg.name, singleOdeumOrg.id)
+		}
+		singleOdeumOrg.nickname = (singleOdeumOrg.nickname !== "") ? singleOdeumOrg.nickname : entity.getNickname(singleOdeumOrg.name)
 		singleOdeumOrg.aux.odeumId = singleOdeumOrg.id
-		singleOdeumOrg.uuname = singleOdeumOrg.nickname
 		singleOdeumOrg.website = singleOdeumOrg.url
 		singleOdeumOrg.id = null
 		singleOdeumOrg.org = {
@@ -334,7 +343,7 @@ router.post('/entity/user/import', async (req, res) => {
 		}
 	})
 	const localBackend = createAPI({
-		baseURL: 'http://127.0.0.1:3024/', //process.env.BACKENDTURL,
+		baseURL: process.env.BACKENDTURL,  //'http://127.0.0.1:5023/', //process.env.BACKENDTURL,
 		headers: {
 			'Accept': 'application/json',
 			'Content-Type': 'application/json',
@@ -524,8 +533,9 @@ async function localCreateRoles() {
 			arrPrivileges.push(privilege)
 		})
 	})
+	
 	await entity.dbSaveRole({ name: "System User", type: 1, priority: 0, "internal": { initialPrivileges: { aclorg: arrPrivileges } } })
-	await entity.dbSaveRole({ name: "Super User", type: 2, priority: 10, "internal": { initialPrivileges: { aclorg: arrPrivileges } } })
+	await entity.dbSaveRole({ name: "Super User", type: 2, priority: 10, "internal": { initialPrivileges: { appui: ["waterworks.data","waterworks.admin"], aclorg: arrPrivileges } } })
 	let aclorgPrivileges = [
 		"org.read",
 		"org.create",
@@ -634,6 +644,7 @@ async function localCreateRoles() {
 		"dashboard.delete",
 	]
 	await entity.dbSaveRole({ name: "User", type: 4, priority: 100, "internal": { initialPrivileges: { org: orgPrivileges } } })
+	await entity.dbSaveRole({ name: "Waterworks User", type: 5, priority: 1000, "internal": { initialPrivileges: { appui: ["waterworks.data"] } } })
 }
 
 class HTTPError extends Error {
