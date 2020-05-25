@@ -19,6 +19,7 @@ router.post('/v2/auth/google', async (req, res) => {
 		console.log('Google auth Response:', rs.status, rs.data)
 		if (rs.data.aud && rs.data.aud == process.env.GOOLEAUTHCLIENTID) {
 			let lease = auth.emailLogin(rs.data.email)
+			console.log(lease)
 			if (lease !== false) {
 				res.status(200).json(lease)
 			} else {
