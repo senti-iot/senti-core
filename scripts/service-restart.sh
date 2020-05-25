@@ -19,6 +19,15 @@ if [[ "$1" == "dev" ]]; then
 	exit 0
 fi
 
+if [[ "$1" == "merge" ]]; then
+	npm install --prefix /srv/nodejs/senti/services/core/merge
+	systemctl restart senti-core-merge.service
+	# Senti Slack Workspace
+	curl -X POST -H 'Content-type: application/json' --data '{"text":"Senti core Merge updated and restarted!"}' https://hooks.slack.com/services/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
+	echo
+	exit 0
+fi
+
 exit 0
 
 
