@@ -15,10 +15,10 @@ router.post('/v2/auth/google', async (req, res) => {
 			'User-Agent': 'Senti.io v1'
 		}
 	})
-	googleAPI.get('tokeninfo', { 'id_token': req.body.id_token }).then(rs => {
+	googleAPI.get('tokeninfo', { 'id_token': req.body.id_token }).then(async rs => {
 		console.log('Google auth Response:', rs.status, rs.data)
 		if (rs.data.aud && rs.data.aud == process.env.GOOLEAUTHCLIENTID) {
-			let lease = auth.emailLogin(rs.data.email)
+			let lease = await auth.emailLogin(rs.data.email)
 			console.log(lease)
 			if (lease !== false) {
 				res.status(200).json(lease)
