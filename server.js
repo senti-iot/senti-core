@@ -50,8 +50,10 @@ app.use([user, users, organisation, organisations, roles, internal])
 app.use([acltest])
 
 //---Start the express server---------------------------------------------------
+var allRoutes = require('./logging/routes')
 
 const startServer = () => {
+	allRoutes(app)
 	app.listen(port, () => {
 		console.log('Senti Core Service started on port', port)
 	}).on('error', (err) => {
