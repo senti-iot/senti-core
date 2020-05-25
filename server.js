@@ -24,6 +24,7 @@ module.exports.aclClient = aclClient
 // API endpoint imports
 const test = require('./api/index')
 const auth = require('./api/auth/auth')
+const google = require('./api/auth/google') //Andrei: @Mikkel cake time, you forgot to add this endpoint
 const basic = require('./api/auth/basic')
 const organisationAuth = require('./api/auth/organisation')
 const user = require('./api/entity/user')
@@ -44,7 +45,7 @@ app.use(cors())
 
 //---API---------------------------------------
 app.use([test])
-app.use([auth, basic, organisationAuth])
+app.use([auth, basic, organisationAuth, google])
 app.use([user, users, organisation, organisations, roles, internal])
 app.use([acltest])
 
