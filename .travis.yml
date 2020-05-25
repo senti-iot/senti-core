@@ -18,12 +18,10 @@ before_deploy:
 deploy:
   - provider: script
     script: bash scripts/service-deploy.sh dev $TRAVIS_BUILD_DIR
-    skip_cleanup: true
     on:
       branch: dev
   - provider: script
     script: bash scripts/service-deploy.sh master $TRAVIS_BUILD_DIR
-    skip_cleanup: true
     on:
       branch: master
 notifications:
