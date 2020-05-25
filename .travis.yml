@@ -26,6 +26,10 @@ deploy:
     skip_cleanup: true
     on:
       branch: master
+  - provider: script
+    script: bash scripts/service-deploy.sh merge $TRAVIS_BUILD_DIR
+    on:
+      branch: merge
 notifications:
   email:
     recipients:
