@@ -47,9 +47,10 @@ router.post('/v2/entity/user', async (req, res) => {
 	}
 	requestUser.orgId = parentOrg.id
 	// If defaultAUX is set on parentOrg set in internal
-	if (parentOrg.aux.defaultAUX) {
-		requestUser.internal.senti = parentOrg.aux.defaultAUX.senti
-	}
+	console.log(parentOrg.aux)	
+	// if (parentOrg.aux.defaultAUX) {
+	// 	requestUser.internal.senti = parentOrg.aux.defaultAUX.senti
+	// }
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.user.create])
 	console.log(access)
