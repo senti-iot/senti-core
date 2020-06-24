@@ -46,6 +46,10 @@ router.post('/v2/entity/user', async (req, res) => {
 		return
 	}
 	requestUser.orgId = parentOrg.id
+	// If defaultAUX is set on parentOrg set in internal
+	if (parentOrg.aux.defaultAUX) {
+		requestUser.internal.senti = parentOrg.aux.defaultAUX.senti
+	}
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.user.create])
 	console.log(access)
@@ -96,6 +100,12 @@ router.post('/v2/entity/user', async (req, res) => {
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 
 	switch (dbUser.state) {
+		case entityService.userState.ok:
+			if (requestUser.password !== false && requestUser.password !== '') {
+				let credentials = new RequestCredentials({ id: dbUser.id, newPassword: requestUser.password })
+				entity.setUserPassword(credentials)
+			}
+			break;
 		case entityService.userState.confirm:
 			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
 			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName, "@ORGNICKNAME@": parentOrg.nickname }, wlHost)
