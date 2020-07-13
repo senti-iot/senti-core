@@ -145,7 +145,7 @@ router.delete('/v2/entity/organisation/:uuid', async (req, res) => {
 	}
 	let entity = new entityService()
 	let org = await entity.getDbOrganisationByUUID(req.params.uuid)
-	//let deletedOrg = await entity.deleteOrganisation(org)
+	let deletedOrg = await entity.deleteOrganisation(org)
 	res.status(200).json()
 })
 router.get('/v2/entity/organisation/:uuid/resourcegroups', async (req, res) => {
