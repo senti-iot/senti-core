@@ -148,18 +148,33 @@ router.post('/v2/internal/initaclroot', async (req, res) => {
 	// }
 
 	// Check for ORGROLES or create some...
-	let orgRoles = await entity.createAclOrganisationRoles(org.id)
-	console.log(orgRoles)
-	await Promise.all(orgRoles.map(async (orgRole) => {
+	// let orgRoles = await entity.createAclOrganisationRoles(org.id)
+	// console.log(orgRoles)
+	// await Promise.all(orgRoles.map(async (orgRole) => {
+	// 	// Register role as entity under org
+	// 	await aclClient.registerEntity(orgRole.aclUUID)
+	// 	await aclClient.addEntityToParent(orgRole.aclUUID, orgEntity.uuid)
+	// 	// Add initial privileges for role on org->aclResources
+	// 	await Promise.all(Object.entries(orgRole.internal.initialPrivileges).map(async ([key, privileges]) => {
+	// 		let p = await aclClient.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
+	// 		//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
+	// 	}))
+	// }))
+
+	await orgRoles.reduce(async (promise, orgRole) => {
+		// This line will wait for the last async function to finish.
+		// The first iteration uses an already resolved Promise
+		// so, it will immediately continue.
+		await promise;
 		// Register role as entity under org
 		await aclClient.registerEntity(orgRole.aclUUID)
 		await aclClient.addEntityToParent(orgRole.aclUUID, orgEntity.uuid)
-		// Add initial privileges for role on org->aclResources
-		await Promise.all(Object.entries(orgRole.internal.initialPrivileges).map(async ([key, privileges]) => {
+		await Object.entries(orgRole.internal.initialPrivileges).reduce(async (mypromise, [key, privileges]) => {
+			await mypromise;
 			let p = await aclClient.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
-			//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
-		}))
-	}))
+		}, Promise.resolve())
+
+	}, Promise.resolve())
 	res.status(200).json(org)
 })
 
