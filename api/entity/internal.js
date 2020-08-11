@@ -103,7 +103,7 @@ router.post('/v1/internal/mail/send', async (req, res) => {
 	res.status(200).json(result)
 })
 
-router.post('/entity/organisation/initaclroot', async (req, res) => {
+router.post('/v2/internal/initaclroot', async (req, res) => {
 	let entity = new entityService()
 	
 	let org = await entity.getRootOrganisation()
