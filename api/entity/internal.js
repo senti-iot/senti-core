@@ -134,7 +134,7 @@ router.post('/v2/internal/initaclroot', async (req, res) => {
 
 	// Register aclOrgResources and add them to ORG
 	await Promise.all(Object.entries(aclOrgResources).map(async ([, aclResource]) => {
-		if (aclResource.type !== 1 && aclResource.type !== 3) {
+		if (aclResource.type !== 1 && aclResource.type !== 2 && aclResource.type !== 3) {
 			await aclClient.registerResource(aclResource.uuid, aclResource.type)
 			await aclClient.addResourceToParent(aclResource.uuid, orgResource.uuid)
 		}
