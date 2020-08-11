@@ -160,7 +160,7 @@ router.post('/v2/internal/initaclroot', async (req, res) => {
 	// 		//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
 	// 	}))
 	// }))
-
+	let orgRoles = await entity.createAclOrganisationRoles(org.id)
 	await orgRoles.reduce(async (promise, orgRole) => {
 		// This line will wait for the last async function to finish.
 		// The first iteration uses an already resolved Promise
