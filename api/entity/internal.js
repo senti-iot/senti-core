@@ -108,13 +108,13 @@ router.post('/v2/internal/initaclroot', async (req, res) => {
 	
 	let org = await entity.getRootOrganisation()
 	let aclResources = await entity.getAclResources()
-	if (aclResources === false) {
-		let aOrgResources = [1, 2, 3, 5, 7, 8, 14]
-		await Promise.all(Object.entries(ResourceType).map(async ([key, type]) => {
-			await entity.dbSaveAclResource({ "name": key, "type": type, internal: { isOrgResource: aOrgResources.includes(type) } })
-		}))
-		aclResources = await entity.getAclResources()
-	}
+	// if (aclResources === false) {
+	// 	let aOrgResources = [1, 2, 3, 5, 7, 8, 14]
+	// 	await Promise.all(Object.entries(ResourceType).map(async ([key, type]) => {
+	// 		await entity.dbSaveAclResource({ "name": key, "type": type, internal: { isOrgResource: aOrgResources.includes(type) } })
+	// 	}))
+	// 	aclResources = await entity.getAclResources()
+	// }
 	// Register ACLORG ON ROOT as 00000000-0000-0000-0000-000000000000
 	await entity.dbSaveAclOrgResource(org.id, aclResources.filter(r => r.type === 1)[0].id, '00000000-0000-0000-0000-000000000000')
 	let aclOrgResources = await entity.createAclOrgResources(org)
@@ -128,7 +128,9 @@ router.post('/v2/internal/initaclroot', async (req, res) => {
 	if (orgEntity.uuid !== orgResource.uuid) {
 		console.log('Something went really wrong...')
 	}
-	await aclClient.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
+	if (orgResource.uuid !== aclOrgResource.uuid) {
+		await aclClient.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
+	}
 
 	// Register aclOrgResources and add them to ORG
 	await Promise.all(Object.entries(aclOrgResources).map(async ([, aclResource]) => {
