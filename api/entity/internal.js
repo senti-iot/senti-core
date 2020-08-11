@@ -158,57 +158,6 @@ router.post('/v2/internal/initaclroot', async (req, res) => {
 			//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
 		}))
 	}))
-	//console.log(orgRoles.filter(role => { return role.roleId === 1 })[0])
-
-	// ADD USERS administrator and system to root aclorg
-	// let administrator = await entity.getUserByUserName('administrator')
-
-	// if (administrator === false) {
-	// 	let requestUser = new RequestUser()
-	// 	requestUser.userName = 'administrator'
-	// 	requestUser.firstName = 'System'
-	// 	requestUser.lastName = 'Administrator'
-	// 	requestUser.email = 'support@senti.cloud'
-	// 	requestUser.state = 0
-	// 	requestUser.orgId = org.id
-	// 	requestUser.role = orgRoles.filter(role => { return role.roleId === 2 })[0]
-	// 	requestUser.roleId = requestUser.role.roleId
-	// 	administrator = await entity.createUser(requestUser)
-	// }
-	
-	// await aclClient.registerEntity(administrator.uuid)
-	// await aclClient.addEntityToParent(administrator.uuid, orgRoles.filter(role => { return role.roleId === 2 })[0].aclUUID)
-
-	// await aclClient.registerResource(administrator.uuid, ResourceType.user)
-	// await aclClient.addResourceToParent(administrator.uuid, aclOrgResources.users.uuid)
-
-	// let dbAdm = await entity.getDbUserByUUID(administrator.uuid)
-	// let admPass = new RequestCredentials({ id: dbAdm.id, newPassword: req.body.admpass })
-	// await entity.setUserPassword(admPass)
-
-	// let systemuser = await entity.getUserByUserName('system')
-
-	// if (systemuser === false) {
-	// 	let requestSystemUser = new RequestUser()
-	// 	requestSystemUser.userName = 'system'
-	// 	requestSystemUser.firstName = 'System'
-	// 	requestSystemUser.lastName = 'Administrator'
-	// 	requestSystemUser.email = 'support@senti.cloud'
-	// 	requestSystemUser.state = 0
-	// 	requestSystemUser.orgId = org.id
-	// 	requestSystemUser.role = orgRoles.filter(role => { return role.roleId === 1 })[0]
-	// 	requestSystemUser.roleId = requestSystemUser.role.roleId
-	// 	systemuser = await entity.createUser(requestSystemUser)
-	// }
-	// await aclClient.registerEntity(systemuser.uuid)
-	// await aclClient.addEntityToParent(systemuser.uuid, orgRoles.filter(role => { return role.roleId === 1 })[0].aclUUID)
-
-	// await aclClient.registerResource(systemuser.uuid, ResourceType.user)
-	// await aclClient.addResourceToParent(systemuser.uuid, aclOrgResources.users.uuid)
-
-	// let dbSys = await entity.getDbUserByUUID(systemuser.uuid)
-	// let sysPass = new RequestCredentials({ id: dbSys.id, newPassword: req.body.syspass })
-	// await entity.setUserPassword(sysPass)
 	res.status(200).json(org)
 })
 
@@ -272,19 +221,23 @@ router.get('/v2/internal/organisation/allaclfix', async (req, res) => {
 		let org = await entity.getDbOrganisationById(row.id)
 		console.log(org)
 
+		let parentAclResources = await entity.getAclOrgResourcesOnName(row.parentId)
 		let aclOrgResources = await entity.createAclOrgResources(org)
 
 		// Register ACL ORG as resource
-		let aclOrgResource = await aclClient.registerResource(aclOrgResources.aclorg.uuid, ResourceType.aclorg)
+		let aclOrgResource = await aclClient.registerResource(aclOrgResources['aclorg'].uuid, ResourceType.aclorg)
+		await aclClient.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
+	
 		// Register org as entity
 		let orgEntity = await aclClient.registerEntity(org.uuid)
 		// Register org as resource under ACL ORG
 		let orgResource = await aclClient.registerResource(org.uuid, ResourceType.org)
 		if (orgEntity.uuid !== orgResource.uuid) {
 			console.log('Something went really wrong...')
+			res.status(400).json()
+			return
 		}
 		await aclClient.addResourceToParent(orgResource.uuid, aclOrgResource.uuid)
-	
 		// Register aclOrgResources and add them to ORG
 		await Promise.all(Object.entries(aclOrgResources).map(async ([, aclResource]) => {
 			if (aclResource.type !== 1 && aclResource.type !== 3) {
@@ -292,9 +245,8 @@ router.get('/v2/internal/organisation/allaclfix', async (req, res) => {
 				await aclClient.addResourceToParent(aclResource.uuid, orgResource.uuid)
 			}
 		}))
-		// Check for ORGROLES or create some...
+		// Get organisation roles
 		let orgRoles = await entity.createAclOrganisationRoles(org.id)
-		// console.log(orgRoles)
 		await Promise.all(orgRoles.map(async (orgRole) => {
 			// Register role as entity under org
 			await aclClient.registerEntity(orgRole.aclUUID)
@@ -305,8 +257,6 @@ router.get('/v2/internal/organisation/allaclfix', async (req, res) => {
 				//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
 			}))
 		}))
-
-
 		result.push(org)
 	}, Promise.resolve())
 
