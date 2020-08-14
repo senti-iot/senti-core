@@ -324,6 +324,36 @@ router.get('/v2/internal/users/allaclfix', async (req, res) => {
 	res.status(200).json(result)
 })
 
+router.get('/v2/internal/users/waterworksaclfix', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+
+	let select = `SELECT uuid, internal->'$.sentiWaterworks.devices' FROM user WHERE NOT ISNULL(internal->'$.sentiWaterworks.devices')`
+	let rs = await mysqlConn.query(select, [])
+	if (rs[0].length === 0) {
+		return false
+	}
+	let result = []
+
+	// rs[0].shift()
+	// Alternativ til Promise.all
+	await rs[0].reduce(async (promise, row) => {
+		// This line will wait for the last async function to finish.
+		// The first iteration uses an already resolved Promise
+		// so, it will immediately continue.
+		await promise;
+		// let org = await entity.getDbOrganisationById(row.id)
+		console.log(row)
+		// await aclClient.addPrivileges(req.params.useruuid, req.params.deviceuuid, [Privilege.device.read])
+
+		result.push(row)
+	}, Promise.resolve())
+	res.status(200).json(result)
+})
+
 router.post('/entity/organisation/createroot', async (req, res) => {
 	let entity = new entityService()
 	
