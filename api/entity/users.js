@@ -17,6 +17,7 @@ router.get('/v2/entity/users', async (req, res) => {
 		return
 	}
 	let resources = await aclClient.findResources(lease.uuid, '00000000-0000-0000-0000-000000000000', ResourceType.user, Privilege.user.read)
+	
 	let entity = new entityService()
 	let queryUUIDs = (resources.length > 0) ? resources.map(item => { return item.uuid }) : false
 	res.status(200).json(await entity.getUsersByUUID(queryUUIDs))

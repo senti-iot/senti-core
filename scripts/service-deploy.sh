@@ -30,7 +30,7 @@ if [[ "$1" == "merge" ]]; then
 	rsync -r --quiet $2/ deploy@rey.webhouse.net:/srv/nodejs/senti/services/core/merge
 	echo
 	echo Restarting Senti core service: $1 ...
-	ssh deploy@rey.webhouse.net 'sudo /srv/nodejs/senti/services/core/merge/scripts/service-restart.sh dev'
+	ssh deploy@rey.webhouse.net 'sudo /srv/nodejs/senti/services/core/merge/scripts/service-restart.sh merge'
 	echo
 	echo Deployment to Senti core $1 and restart done!
 	exit 0
