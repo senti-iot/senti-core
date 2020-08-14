@@ -331,7 +331,7 @@ router.get('/v2/internal/users/waterworksaclfix', async (req, res) => {
 		return
 	}
 
-	let select = `SELECT uuid, internal->'$.sentiWaterworks.devices' FROM user WHERE NOT ISNULL(internal->'$.sentiWaterworks.devices')`
+	let select = `SELECT uuid, internal->'$.sentiWaterworks.devices' as device FROM user WHERE NOT ISNULL(internal->'$.sentiWaterworks.devices')`
 	let rs = await mysqlConn.query(select, [])
 	if (rs[0].length === 0) {
 		return false
