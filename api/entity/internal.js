@@ -347,7 +347,7 @@ router.get('/v2/internal/users/waterworksaclfix', async (req, res) => {
 		await promise;
 		// let org = await entity.getDbOrganisationById(row.id)
 		console.log(row.device[0])
-		// await aclClient.addPrivileges(req.params.useruuid, req.params.deviceuuid, [Privilege.device.read])
+		await aclClient.addPrivileges(row.uuid, row.device[0], [Privilege.device.read])
 
 		result.push(row)
 	}, Promise.resolve())
