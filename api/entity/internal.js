@@ -346,7 +346,7 @@ router.get('/v2/internal/users/waterworksaclfix', async (req, res) => {
 		// so, it will immediately continue.
 		await promise;
 		// let org = await entity.getDbOrganisationById(row.id)
-		console.log(row)
+		console.log(row.device[0])
 		// await aclClient.addPrivileges(req.params.useruuid, req.params.deviceuuid, [Privilege.device.read])
 
 		result.push(row)
