@@ -4,7 +4,9 @@
 	"deprecated": false,
 	"description": "Senti core service",
 	"main": "server.js",
-	"scripts": {},
+	"scripts": {
+		"test" : "echo \"No tests\""
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/senti-iot/senti-core.git"
@@ -43,7 +45,7 @@
 		"moment": "^2.22.2",
 		"mqtt": "^2.18.8",
 		"mysql2": "^2.1.0",
-		"senti-apicore": "0.0.49",
+		"senti-apicore": "0.0.52",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
