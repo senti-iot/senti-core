@@ -5,7 +5,7 @@
 	"description": "Senti core service",
 	"main": "server.js",
 	"scripts": {
-		"test" : "echo \"No tests\""
+		"test": "echo \"No tests\""
 	},
 	"repository": {
 		"type": "git",
@@ -45,7 +45,7 @@
 		"moment": "^2.22.2",
 		"mqtt": "^2.18.8",
 		"mysql2": "^2.1.0",
-		"senti-apicore": "0.0.52",
+		"senti-apicore": "0.0.53",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {

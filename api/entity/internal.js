@@ -78,7 +78,7 @@ router.get('/v2/internal/organisation/:uuid/fix', async (req, res) => {
 		// Add initial privileges for role on org->aclResources
 		await Promise.all(Object.entries(orgRole.internal.initialPrivileges).map(async ([key, privileges]) => {
 			let p = await aclClient.addPrivileges(orgRole.aclUUID, aclOrgResources[key].uuid, privileges)
-			//console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
+			console.log(orgRole.uuid, aclOrgResources[key].uuid, privileges, p)
 		}))
 	}))
 
@@ -189,34 +189,34 @@ router.get('/v2/internal/organisation/allaclfix', async (req, res) => {
 	let select = `SELECT *
 	FROM (
 		SELECT O1.id, 0 as parentId, 1 as niveau
-		FROM sentidatastorage_dev.organisation O1
+		FROM organisation O1
 		WHERE O1.parentOrgId=0
 	) o1
 	UNION
 	SELECT *
 	FROM (
 		SELECT O2.id, O2.parentOrgId as parentId, 2 as niveau
-		FROM sentidatastorage_dev.organisation O1
-		INNER JOIN sentidatastorage_dev.organisation O2 ON O2.parentOrgId=O1.id
+		FROM organisation O1
+		INNER JOIN organisation O2 ON O2.parentOrgId=O1.id
 		WHERE O1.parentOrgId=0
 	) o2
 	UNION
 	SELECT *
 	FROM (
 		SELECT O3.id, O3.parentOrgId as parentId, 3 as niveau
-		FROM sentidatastorage_dev.organisation O1
-		INNER JOIN sentidatastorage_dev.organisation O2 ON O2.parentOrgId=O1.id
-		INNER JOIN sentidatastorage_dev.organisation O3 ON O3.parentOrgId=O2.id
+		FROM organisation O1
+		INNER JOIN organisation O2 ON O2.parentOrgId=O1.id
+		INNER JOIN organisation O3 ON O3.parentOrgId=O2.id
 		WHERE O1.parentOrgId=0
 	) o3
 	UNION
 	SELECT *
 	FROM (
 		SELECT O4.id, O4.parentOrgId as parentId, 4 as niveau
-		FROM sentidatastorage_dev.organisation O1
-		INNER JOIN sentidatastorage_dev.organisation O2 ON O2.parentOrgId=O1.id
-		INNER JOIN sentidatastorage_dev.organisation O3 ON O3.parentOrgId=O2.id
-		INNER JOIN sentidatastorage_dev.organisation O4 ON O4.parentOrgId=O3.id
+		FROM organisation O1
+		INNER JOIN organisation O2 ON O2.parentOrgId=O1.id
+		INNER JOIN organisation O3 ON O3.parentOrgId=O2.id
+		INNER JOIN organisation O4 ON O4.parentOrgId=O3.id
 		WHERE O1.parentOrgId=0
 	) o4
 	ORDER BY niveau, id`
