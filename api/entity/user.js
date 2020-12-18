@@ -7,7 +7,7 @@ const authClient = require('../../server').authClient
 const entityService = require('../../lib/entity/entityService')
 
 const sentiToken = require('senti-apicore').sentiToken
-const sentiMail = require('senti-apicore').sentiMail
+const sentiMail = require('senti-apicore').sentiSmtpMail
 
 const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
 const RequestCredentials = require('../../lib/entity/dataClasses/RequestCredentials')
@@ -94,11 +94,16 @@ router.post('/v2/entity/user', async (req, res) => {
 
 	// Check state if i should create token and send mail
 
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	
+	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	const mailService = new sentiMail(mysqlConn, wlHost)
+	await mailService.smtpConnect()
+
 	let tokenService = new sentiToken(mysqlConn)
 	let token
 	let msg
-	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	
 
 	switch (dbUser.state) {
 		case entityService.userState.ok:
@@ -298,8 +303,12 @@ router.post('/v2/entity/user/confirm', async (req, res) => {
 		res.status(500).json()
 		return
 	}	
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	const mailService = new sentiMail(mysqlConn, wlHost)
+	await mailService.smtpConnect()
+
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName }, wlHost)
 	msg.to = {
 		email: dbUser.email,
@@ -347,10 +356,14 @@ router.post('/v2/entity/user/forgotpassword', async (req, res) => {
 		res.status(400).json()
 		return
 	}
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	const mailService = new sentiMail(mysqlConn, wlHost)
+	await mailService.smtpConnect()
+
 	let tokenService = new sentiToken(mysqlConn)
 	let token = await tokenService.createUserToken(dbUser.id, sentiToken.forgotPassword, { days: 1 })
-	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.forgotPassword, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName }, wlHost)
 	msg.to = {
 		email: dbUser.email,
@@ -379,8 +392,13 @@ router.post('/v2/entity/user/forgotpassword/set', async (req, res) => {
 		res.status(500).json()
 		return
 	}
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	const mailService = new sentiMail(mysqlConn, wlHost)
+	await mailService.smtpConnect()
+
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName }, wlHost)
 	msg.to = {
 		email: dbUser.email,
@@ -421,8 +439,14 @@ router.post('/v2/entity/user/:uuid/setpassword', async (req, res) => {
 		res.status(500).json()
 		return
 	}
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	const mailService = new sentiMail(mysqlConn, wlHost)
+	await mailService.smtpConnect()
+
+
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName }, wlHost)
 	msg.to = {
 		email: dbUser.email,
@@ -460,9 +484,13 @@ router.post('/v2/entity/user/:uuid/resendconfirmmail', async (req, res) => {
 	}
 	let tokenService = new sentiToken(mysqlConn)
 	tokenService.clearTokensByUserId(dbUser.id, sentiToken.confirmUser)
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
-	let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	const mailService = new sentiMail(mysqlConn, wlHost)
+	await mailService.smtpConnect()
+
+	let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
+	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName }, wlHost)
 	msg.to = {
 		email: dbUser.email,
