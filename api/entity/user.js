@@ -118,7 +118,7 @@ router.post('/v2/entity/user', async (req, res) => {
 			// 	name: dbUser.firstName + ' ' + dbUser.lastName
 			// }
 			msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
-			sentiSmtpMail.send(msg)
+			mailSmtpService.send(msg)
 			break;
 		case entityService.userState.approve:
 			break;
