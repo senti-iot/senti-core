@@ -8,6 +8,7 @@ const entityService = require('../../lib/entity/entityService')
 
 const sentiToken = require('senti-apicore').sentiToken
 const sentiMail = require('senti-apicore').sentiMail
+const sentiSmtpMail = require('senti-apicore').sentiSmtpMail
 
 const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
 const RequestCredentials = require('../../lib/entity/dataClasses/RequestCredentials')
@@ -93,12 +94,14 @@ router.post('/v2/entity/user', async (req, res) => {
 	// LOOP GROUPS AND ADD USER TO RESOURCE GROUPS -- and maybe later also entity groups(for special privileges)
 
 	// Check state if i should create token and send mail
-
+	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	let mailSmtpService = new sentiSmtpMail(mysqlConn, wlHost)
+
 	let tokenService = new sentiToken(mysqlConn)
 	let token
 	let msg
-	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	
 
 	switch (dbUser.state) {
 		case entityService.userState.ok:
@@ -109,12 +112,13 @@ router.post('/v2/entity/user', async (req, res) => {
 			break;
 		case entityService.userState.confirm:
 			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
-			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName, "@ORGNICKNAME@": parentOrg.nickname }, wlHost)
-			msg.to = {
-				email: dbUser.email,
-				name: dbUser.firstName + ' ' + dbUser.lastName
-			}
-			mailService.send(msg)
+			msg = await mailSmtpService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName, "@ORGNICKNAME@": parentOrg.nickname }, wlHost)
+			// msg.to = {
+			// 	email: dbUser.email,
+			// 	name: dbUser.firstName + ' ' + dbUser.lastName
+			// }
+			msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
+			sentiSmtpMail.send(msg)
 			break;
 		case entityService.userState.approve:
 			break;
