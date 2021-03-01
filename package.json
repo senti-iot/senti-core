@@ -34,7 +34,7 @@
 	"homepage": "https://github.com/senti-iot/senti-core#readme",
 	"dependencies": {
 		"@sendgrid/mail": "^6.5.2",
-		"apisauce": "^1.1.1",
+		"apisauce": "^2.0.1",
 		"cli-table3": "^0.6.0",
 		"colors": "^1.4.0",
 		"cors": "^2.8.5",
@@ -45,7 +45,7 @@
 		"moment": "^2.22.2",
 		"mqtt": "^2.18.8",
 		"mysql2": "^2.1.0",
-		"senti-apicore": "0.0.53",
+		"senti-apicore": "0.0.55",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
