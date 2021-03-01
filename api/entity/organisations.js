@@ -9,7 +9,7 @@ const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
 router.get('/v2/entity/organisations', async (req, res) => {
 	let lease = await authClient.getLease(req)
-	console.log(lease)
+	// console.log(lease)
 	if (lease === false) {
 		res.status(401).json()
 		return

@@ -53,7 +53,7 @@ router.post('/v2/entity/user', async (req, res) => {
 	// }
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.user.create])
-	console.log(access)
+	// console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -159,7 +159,7 @@ router.put('/v2/entity/user/:uuid', async (req, res) => {
 	} else {
 		access = await aclClient.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.modify])
 	}
-	console.log(access)
+	// console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -234,7 +234,7 @@ router.delete('/v2/entity/user/:uuid', async (req, res) => {
 })
 router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
 	let lease = await authClient.getLease(req)
-	console.log(lease)
+	// console.log(lease)
 	if (lease === false) {
 		res.status(401).json()
 		return
@@ -242,7 +242,7 @@ router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
 
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify, Privilege.user.changeparent])
-	console.log(access)
+	// console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -320,7 +320,7 @@ router.post('/v2/entity/user/confirmwithpassword', async (req, res) => {
 	let credentials = new RequestCredentials(req.body)
 	let tokenService = new sentiToken(mysqlConn)
 	let userToken = await tokenService.getUserTokenByTokenAndType(credentials.token, sentiToken.confirmUserWithPassword)
-	console.log(userToken)
+	// console.log(userToken)
 	if (userToken === false) {
 		res.status(404).json()
 		return
