@@ -24,7 +24,7 @@ router.post('/v2/auth/basic', async (req, res) => {
 	} else {
 		if (credentials.username === false) {
 			return res.status(400).json({
-				error: "login.missingPassword"
+				error: "login.missingUsername"
 			})
 		}
 		if (credentials.password === false) {

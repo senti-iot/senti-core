@@ -4,15 +4,40 @@ const authService = require('../../lib/authentication/authService')
 
 router.post('/v2/auth/organisation', async (req, res) => {
 	let auth = new authService()
-	if (req.body.orgNickname && req.body.username && req.body.password) {
-		let lease = await auth.orgLogin(req.body.orgNickname, req.body.username, req.body.password)
+	let credentials = {
+		orgNickname: req.body.orgNickname,
+		username: req.body.username,
+		password: req.body.password
+	}
+	if (credentials.orgNickname && credentials.username && credentials.password) {
+		let lease = await auth.orgLogin(credentials.orgNickname, credentials.username, credentials.password)
 		if (lease !== false) {
-			res.status(200).json(lease)
+			if (lease.error) {
+				return res.status(400).json(lease)
+			}
+			return res.status(200).json(lease)
 		} else {
-			res.status(404).json(lease)
+			return res.status(404).json(lease)
 		}
 	} else {
-		res.status(400).json()
+		if (!credentials.orgNickname) {
+			return res.status(400).json({
+				error: "login.missingOrganisation"
+			})
+		}
+		if (!credentials.username) {
+			return res.status(400).json({
+				error: "login.missingUsername"
+			})
+		}
+		if (!credentials.password) {
+			return res.status(400).json({
+				error: "login.missingPassword"
+			})
+		}
+		res.status(500).json({
+			error: "login.unknownError"
+		})
 	}
 })
 module.exports = router
