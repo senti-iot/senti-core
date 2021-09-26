@@ -7,7 +7,7 @@ const authClient = require('../../server').authClient
 const entityService = require('../../lib/entity/entityService')
 
 const sentiToken = require('senti-apicore').sentiToken
-const sentiMail = require('senti-apicore').sentiMail
+const sentiMail = require('senti-apicore').sentiSmtpMail
 
 const RequestUser = require('../../lib/entity/dataClasses/RequestUser')
 const RequestCredentials = require('../../lib/entity/dataClasses/RequestCredentials')
@@ -53,7 +53,7 @@ router.post('/v2/entity/user', async (req, res) => {
 	// }
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, parentOrg.uuid, [Privilege.user.create])
-	console.log(access)
+	// console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -93,12 +93,13 @@ router.post('/v2/entity/user', async (req, res) => {
 	// LOOP GROUPS AND ADD USER TO RESOURCE GROUPS -- and maybe later also entity groups(for special privileges)
 
 	// Check state if i should create token and send mail
+	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	let mailService = new sentiMail(mysqlConn, wlHost)
 
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
 	let tokenService = new sentiToken(mysqlConn)
 	let token
 	let msg
-	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 
 	switch (dbUser.state) {
 		case entityService.userState.ok:
@@ -110,10 +111,11 @@ router.post('/v2/entity/user', async (req, res) => {
 		case entityService.userState.confirm:
 			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
 			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName, "@ORGNICKNAME@": parentOrg.nickname }, wlHost)
-			msg.to = {
-				email: dbUser.email,
-				name: dbUser.firstName + ' ' + dbUser.lastName
-			}
+			// msg.to = {
+			// 	email: dbUser.email,
+			// 	name: dbUser.firstName + ' ' + dbUser.lastName
+			// }
+			msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
 			mailService.send(msg)
 			break;
 		case entityService.userState.approve:
@@ -125,10 +127,11 @@ router.post('/v2/entity/user', async (req, res) => {
 			}
 			token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUserWithPassword, { days: 7 })
 			msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirmHasPassword, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName, "@ORGNICKNAME@": parentOrg.nickname }, wlHost)
-			msg.to = {
-				email: dbUser.email,
-				name: dbUser.firstName + ' ' + dbUser.lastName
-			}
+			// msg.to = {
+			// 	email: dbUser.email,
+			// 	name: dbUser.firstName + ' ' + dbUser.lastName
+			// }
+			msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
 			mailService.send(msg)
 			break;
 	}
@@ -156,7 +159,7 @@ router.put('/v2/entity/user/:uuid', async (req, res) => {
 	} else {
 		access = await aclClient.testPrivileges(lease.uuid, requestOrg.uuid, [Privilege.user.modify])
 	}
-	console.log(access)
+	// console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -231,7 +234,7 @@ router.delete('/v2/entity/user/:uuid', async (req, res) => {
 })
 router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
 	let lease = await authClient.getLease(req)
-	console.log(lease)
+	// console.log(lease)
 	if (lease === false) {
 		res.status(401).json()
 		return
@@ -239,7 +242,7 @@ router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
 
 	// Test MY ACCESS
 	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify, Privilege.user.changeparent])
-	console.log(access)
+	// console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
@@ -298,13 +301,17 @@ router.post('/v2/entity/user/confirm', async (req, res) => {
 		res.status(500).json()
 		return
 	}	
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	let mailService = new sentiMail(mysqlConn, wlHost)
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName }, wlHost)
-	msg.to = {
-		email: dbUser.email,
-		name: dbUser.firstName + ' ' + dbUser.lastName
-	}
+	// msg.to = {
+	// 	email: dbUser.email,
+	// 	name: dbUser.firstName + ' ' + dbUser.lastName
+	// }
+	msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
 	mailService.send(msg)
 	tokenService.clearTokensByUserId(dbUser.id, sentiToken.confirmUser)
 	res.status(200).json(true)
@@ -313,7 +320,7 @@ router.post('/v2/entity/user/confirmwithpassword', async (req, res) => {
 	let credentials = new RequestCredentials(req.body)
 	let tokenService = new sentiToken(mysqlConn)
 	let userToken = await tokenService.getUserTokenByTokenAndType(credentials.token, sentiToken.confirmUserWithPassword)
-	console.log(userToken)
+	// console.log(userToken)
 	if (userToken === false) {
 		res.status(404).json()
 		return
@@ -347,15 +354,18 @@ router.post('/v2/entity/user/forgotpassword', async (req, res) => {
 		res.status(400).json()
 		return
 	}
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	let mailService = new sentiMail(mysqlConn, wlHost)
+		
 	let tokenService = new sentiToken(mysqlConn)
 	let token = await tokenService.createUserToken(dbUser.id, sentiToken.forgotPassword, { days: 1 })
-	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.forgotPassword, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName }, wlHost)
-	msg.to = {
-		email: dbUser.email,
-		name: dbUser.firstName + ' ' + dbUser.lastName
-	}
+	// msg.to = {
+	// 	email: dbUser.email,
+	// 	name: dbUser.firstName + ' ' + dbUser.lastName
+	// }
+	msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
 	mailService.send(msg)
 	res.status(200).json()
 })
@@ -379,13 +389,16 @@ router.post('/v2/entity/user/forgotpassword/set', async (req, res) => {
 		res.status(500).json()
 		return
 	}
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	let mailService = new sentiMail(mysqlConn, wlHost)
+
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName }, wlHost)
-	msg.to = {
-		email: dbUser.email,
-		name: dbUser.firstName + ' ' + dbUser.lastName
-	}
+	// msg.to = {
+	// 	email: dbUser.email,
+	// 	name: dbUser.firstName + ' ' + dbUser.lastName
+	// }
+	msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
 	mailService.send(msg)
 	tokenService.clearTokensByUserId(dbUser.id, sentiToken.forgotPassword)
 	res.status(200).json(true)
@@ -421,13 +434,16 @@ router.post('/v2/entity/user/:uuid/setpassword', async (req, res) => {
 		res.status(500).json()
 		return
 	}
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	let mailService = new sentiMail(mysqlConn, wlHost)
+
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.passwordChanged, { "@FIRSTNAME@": dbUser.firstName, "@USERNAME@": dbUser.userName }, wlHost)
-	msg.to = {
-		email: dbUser.email,
-		name: dbUser.firstName + ' ' + dbUser.lastName
-	}
+	// msg.to = {
+	// 	email: dbUser.email,
+	// 	name: dbUser.firstName + ' ' + dbUser.lastName
+	// }
+	msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
 	mailService.send(msg)
 	res.status(200).json()
 })
@@ -460,14 +476,18 @@ router.post('/v2/entity/user/:uuid/resendconfirmmail', async (req, res) => {
 	}
 	let tokenService = new sentiToken(mysqlConn)
 	tokenService.clearTokensByUserId(dbUser.id, sentiToken.confirmUser)
-	let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
-	let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
+	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
+	let mailService = new sentiMail(mysqlConn, wlHost)
+
+	let token = await tokenService.createUserToken(dbUser.id, sentiToken.confirmUser, { days: 7 })
+	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.confirm, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName }, wlHost)
-	msg.to = {
-		email: dbUser.email,
-		name: dbUser.firstName + ' ' + dbUser.lastName
-	}
+	// msg.to = {
+	// 	email: dbUser.email,
+	// 	name: dbUser.firstName + ' ' + dbUser.lastName
+	// }
+	msg.to = `${dbUser.firstName + ' ' + dbUser.lastName} <${dbUser.email}>`
 	mailService.send(msg)
 
 	res.status(200).json()
