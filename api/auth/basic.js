@@ -15,21 +15,20 @@ router.post('/v2/auth/basic', async (req, res) => {
 		let lease = await auth.login(credentials.username, credentials.password)
 		if (lease !== false) {
 			if (lease.error) {
-				res.status(400).json(lease)
+				return res.status(400).json(lease)
 			}
-			res.status(200).json(lease)
+			return res.status(200).json(lease)
 		} else {
-			res.status(404).json(lease)
+			return res.status(404).json(lease)
 		}
 	} else {
 		if (credentials.username === false) {
-			res.status(400).json({
+			return res.status(400).json({
 				error: "login.missingPassword"
 			})
 		}
 		if (credentials.password === false) {
-
-			res.status(400).json({
+			return res.status(400).json({
 				error: "login.missingPassword"
 			})
 		}
