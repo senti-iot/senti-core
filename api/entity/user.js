@@ -17,7 +17,7 @@ const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
 
-router.get('/v2/entity/user/:username', async (req, res) => {
+router.get('/v2/entity/user/username/:username', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
