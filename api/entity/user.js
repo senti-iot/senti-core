@@ -16,6 +16,23 @@ const aclClient = require('../../server').aclClient
 const Privilege = require('../../lib/acl/dataClasses/Privilege')
 const ResourceType = require('../../lib/acl/dataClasses/ResourceType')
 
+
+router.get('/v2/entity/user/:username', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.read])
+	if (access.allowed === false) {
+		res.status(403).json()
+		return
+	}
+	let entity = new entityService()
+	let user = await entity.getUserByUserName(req.params.uuid)
+	res.status(200).json(user)
+})
+
 router.get('/v2/entity/user/:uuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
@@ -47,7 +64,7 @@ router.post('/v2/entity/user', async (req, res) => {
 	}
 	requestUser.orgId = parentOrg.id
 	// If defaultAUX is set on parentOrg set in internal
-	console.log(parentOrg.aux)	
+	console.log(parentOrg.aux)
 	// if (parentOrg.aux.defaultAUX) {
 	// 	requestUser.internal.senti = parentOrg.aux.defaultAUX.senti
 	// }
@@ -65,7 +82,7 @@ router.post('/v2/entity/user', async (req, res) => {
 		res.status(409).json()
 		return
 	}
-	
+
 	let requestUserRole = await entity.getAclOrganisationRoleByUUID(requestUser.orgId, requestUser.role.uuid)
 	console.log(requestUserRole)
 	// TEST ROLE ACCESS
@@ -195,7 +212,7 @@ router.put('/v2/entity/user/:uuid', async (req, res) => {
 		await aclClient.removeResourceFromParent(user.uuid, orgAclResources.users.uuid)
 		await aclClient.addResourceToParent(user.uuid, requestOrgAclResources.users.uuid)
 	}
-	
+
 	// Check for ROLE Changes
 	if (requestUser.roleId !== user.roleId) {
 		await aclClient.removeEntityFromParent(user.uuid, userRole.aclUUID)
@@ -250,7 +267,7 @@ router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
 	let entity = new entityService()
 	let internalUser = await entity.getInternalUserByUUID(req.params.uuid)
 	let aclResources = await entity.getAclOrgResourcesOnName(await entity.getOrganisationIdByUUID(internalUser.org.uuid))
-	let userPrivileges = await aclClient.listPrivileges(req.params.uuid, aclResources['appui'].uuid, true) 
+	let userPrivileges = await aclClient.listPrivileges(req.params.uuid, aclResources['appui'].uuid, true)
 	internalUser.privileges = userPrivileges.privileges.map(item => {
 	 	return item.privilege
 	})
@@ -300,7 +317,7 @@ router.post('/v2/entity/user/confirm', async (req, res) => {
 	if (statesuccess === false) {
 		res.status(500).json()
 		return
-	}	
+	}
 	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
 	// let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 
@@ -357,7 +374,7 @@ router.post('/v2/entity/user/forgotpassword', async (req, res) => {
 	// let mailService = new sentiMail(process.env.SENDGRID_API_KEY, mysqlConn)
 	let wlHost = (req.headers['wlhost']) ? req.headers['wlhost'] : ''
 	let mailService = new sentiMail(mysqlConn, wlHost)
-		
+
 	let tokenService = new sentiToken(mysqlConn)
 	let token = await tokenService.createUserToken(dbUser.id, sentiToken.forgotPassword, { days: 1 })
 	let msg = await mailService.getMailMessageFromTemplateType(sentiMail.messageType.forgotPassword, { "@FIRSTNAME@": dbUser.firstName, "@TOKEN@": token.token, "@USERNAME@": dbUser.userName }, wlHost)
