@@ -23,13 +23,15 @@ router.get('/v2/entity/user/username/:username', async (req, res) => {
 		res.status(401).json()
 		return
 	}
-	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.read])
+	let entity = new entityService()
+	let user = await entity.getUserByUserName(req.params.username)
+
+	let access = await aclClient.testPrivileges(lease.uuid, user.uuid, [Privilege.user.read])
 	if (access.allowed === false) {
 		res.status(403).json()
 		return
 	}
-	let entity = new entityService()
-	let user = await entity.getUserByUserName(req.params.uuid)
+	// let user = await entity.getUserByUserName(req.params.uuid)
 	res.status(200).json(user)
 })
 
