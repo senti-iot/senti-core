@@ -219,6 +219,29 @@ router.get('/v2/internal/organisation/allaclfix', async (req, res) => {
 		INNER JOIN organisation O4 ON O4.parentOrgId=O3.id
 		WHERE O1.parentOrgId=0
 	) o4
+	UNION
+	SELECT *
+	FROM (
+		SELECT O5.id, O5.parentOrgId as parentId, 5 as niveau
+		FROM organisation O1
+		INNER JOIN organisation O2 ON O2.parentOrgId=O1.id
+		INNER JOIN organisation O3 ON O3.parentOrgId=O2.id
+		INNER JOIN organisation O4 ON O4.parentOrgId=O3.id
+		INNER JOIN organisation O5 ON O5.parentOrgId=O4.id
+		WHERE O1.parentOrgId=0
+	) o5
+	UNION
+	SELECT *
+	FROM (
+		SELECT O6.id, O6.parentOrgId as parentId, 6 as niveau
+		FROM organisation O1
+		INNER JOIN organisation O2 ON O2.parentOrgId=O1.id
+		INNER JOIN organisation O3 ON O3.parentOrgId=O2.id
+		INNER JOIN organisation O4 ON O4.parentOrgId=O3.id
+		INNER JOIN organisation O5 ON O5.parentOrgId=O4.id
+		INNER JOIN organisation O6 ON O6.parentOrgId=O5.id
+		WHERE O1.parentOrgId=0
+	) o6
 	ORDER BY niveau, id`
 	let rs = await mysqlConn.query(select, [])
 	if (rs[0].length === 0) {

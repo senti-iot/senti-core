@@ -43,14 +43,14 @@
 		"find-config": "^1.0.0",
 		"helmet": "^3.21.2",
 		"moment": "^2.22.2",
-		"mqtt": "^2.18.8",
+		"mqtt": "^4.3.4",
 		"mysql2": "^2.1.0",
-		"senti-apicore": "0.0.55",
+		"senti-apicore": "0.0.59",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
 		"babel-eslint": "^10.0.3",
-		"eslint": "^6.8.0",
+		"eslint": "^8.7.0",
 		"eslint-config-google": "^0.14.0"
 	}
 }
