@@ -50,7 +50,9 @@ router.get('/v2/internal/organisation/:uuid/fix', async (req, res) => {
 	
 	// Register ACL ORG as resource
 	let aclOrgResource = await aclClient.registerResource(aclOrgResources['aclorg'].uuid, ResourceType.aclorg)
-	await aclClient.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
+	if (parentAclResources !== false) {
+		await aclClient.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
+	}
 
 	// Register org as entity
 	let orgEntity = await aclClient.registerEntity(org.uuid)
@@ -251,7 +253,6 @@ router.get('/v2/internal/organisation/allaclfix', async (req, res) => {
 
 	rs[0].shift()
 
-
 	// Alternativ til Promise.all
 	await rs[0].reduce(async (promise, row) => {
 		// This line will wait for the last async function to finish.
@@ -266,7 +267,9 @@ router.get('/v2/internal/organisation/allaclfix', async (req, res) => {
 
 		// Register ACL ORG as resource
 		let aclOrgResource = await aclClient.registerResource(aclOrgResources['aclorg'].uuid, ResourceType.aclorg)
-		await aclClient.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
+		if (parentAclResources !== false) {
+			await aclClient.addResourceToParent(aclOrgResource.uuid, parentAclResources['aclorg'].uuid)
+		}
 	
 		// Register org as entity
 		let orgEntity = await aclClient.registerEntity(org.uuid)
