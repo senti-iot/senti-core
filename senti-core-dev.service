@@ -6,7 +6,7 @@ Documentation=https://github.com/senti-iot/senti-core/blob/master/README.md
 
 [Service]
 WorkingDirectory=/srv/nodejs/senti/services/core/development
-ExecStart=/usr/bin/node server.js
+ExecStart=/usr/local/bin/node server.js
 Environment=NODE_PORT=3024
 Environment=NODE_ENV=development
 Type=simple

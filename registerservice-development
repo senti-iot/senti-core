@@ -23,6 +23,7 @@ if [ ! -e "$service" ]; then
 	sudo systemctl start $service_name
 else
     echo "Senti core service is already installed"
+	sudo cp $server_dir/$service_name $service_dir/$service_name
 	echo "Enabling $service ..."
 	sudo systemctl enable $service_name
 	sudo systemctl daemon-reload
