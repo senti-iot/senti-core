@@ -45,7 +45,7 @@
 		"moment": "^2.22.2",
 		"mqtt": "^4.3.4",
 		"mysql2": "^2.1.0",
-		"senti-apicore": "0.0.60",
+		"senti-apicore": "0.0.61",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
