@@ -54,8 +54,6 @@ router.post('/v2/entity/waterworks/users', async (req, res) => {
 	let entity = new entityService()
 	let uuids = req.body.uuids
 	let users = await entity.getUsersByUUID(uuids)
-	console.log('uuids', uuids)
-	console.log('users', users)
 	return res.status(200).json(users)
 })
 
