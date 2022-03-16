@@ -45,7 +45,7 @@ router.get('/v2/entity/users/:orguuid', async (req, res) => {
  * @param {Array<UUIDS>} uuids - User uuids
 */
 
-router.post('/v2/entity/waterworks/users/', async (req, res) => {
+router.post('/v2/entity/waterworks/users', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
 		res.status(401).json()
