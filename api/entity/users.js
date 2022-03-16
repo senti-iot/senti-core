@@ -17,14 +17,14 @@ router.get('/v2/entity/users', async (req, res) => {
 		return
 	}
 	let resources = await aclClient.findResources(lease.uuid, '00000000-0000-0000-0000-000000000000', ResourceType.user, Privilege.user.read)
-	
+
 	let entity = new entityService()
 	let queryUUIDs = (resources.length > 0) ? resources.map(item => { return item.uuid }) : false
 	res.status(200).json(await entity.getUsersByUUID(queryUUIDs))
 })
 /**
  * Get all users in :orguuid ord, that lease user has access to.
- * @routeparam {String} :orguuid 
+ * @routeparam {String} :orguuid
  */
 router.get('/v2/entity/users/:orguuid', async (req, res) => {
 	let lease = await authClient.getLease(req)
@@ -40,4 +40,21 @@ router.get('/v2/entity/users/:orguuid', async (req, res) => {
 	let queryUUIDs = (resources.length > 0) ? resources.map(item => { return item.uuid }) : false
 	res.status(200).json(await entity.getUsersByUUID(queryUUIDs))
 })
+
+/** Waterworks Installations<->Users connection
+ * @param {Array<UUIDS>} uuids - User uuids
+*/
+
+router.post('/v2/entity/waterworks/users/', async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease === false) {
+		res.status(401).json()
+		return
+	}
+	let entity = new entityService()
+	let uuids = req.body.uuids
+	let users = await entity.getUsersByUUID(uuids)
+	return res.status(200).json(users)
+})
+
 module.exports = router
