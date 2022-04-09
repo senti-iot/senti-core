@@ -42,7 +42,7 @@
 		"express": "^4.17.1",
 		"find-config": "^1.0.0",
 		"helmet": "^3.21.2",
-		"moment": "^2.22.2",
+		"moment": "^2.29.2",
 		"mqtt": "^4.3.4",
 		"mysql2": "^2.1.0",
 		"senti-apicore": "0.0.61",
