@@ -25,6 +25,24 @@ router.get('/v2/entity/organisation/:uuid', async (req, res) => {
 	let organisation = await entity.getOrganisationByUUID(req.params.uuid)
 	res.status(200).json(organisation)
 })
+
+router.get(`/v2/entity/organisation/:uuid/suborgs`, async (req, res) => {
+	let lease = await authClient.getLease(req)
+	if (lease == false) {
+		res.status(401).json()
+		return
+	}
+
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.organisation.read])
+	if (access.allowed === false) {
+		res.status(403).json()
+		return
+	}
+	let entity = new entityService()
+	let suborgs = await entity.getSubOrgs(req.params.uuid)
+	return res.status(200).json(suborgs)
+})
+
 router.post('/v2/entity/organisation', async (req, res) => {
 	let lease = await authClient.getLease(req)
 	if (lease === false) {
@@ -103,7 +121,7 @@ router.put('/v2/entity/organisation/:uuid', async (req, res) => {
 		res.status(403).json()
 		return
 	}
-		
+
 	let org = await entity.getDbOrganisationByUUID(req.params.uuid)
 	let requestParentOrg = await entity.getDbOrganisationByUUID(requestOrg.org.uuid)
 	if (requestParentOrg.id === 0) {
@@ -146,7 +164,7 @@ router.delete('/v2/entity/organisation/:uuid', async (req, res) => {
 	let entity = new entityService()
 	let org = await entity.getDbOrganisationByUUID(req.params.uuid)
 	let deletedOrg = await entity.deleteOrganisation(org)
-	res.status(200).json()
+	res.status(200).json(deletedOrg)
 })
 router.get('/v2/entity/organisation/:uuid/resourcegroups', async (req, res) => {
 	let lease = await authClient.getLease(req)
