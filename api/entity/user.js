@@ -260,7 +260,7 @@ router.get('/v2/entity/user/:uuid/internal', async (req, res) => {
 	}
 
 	// Test MY ACCESS
-	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify, Privilege.user.changeparent])
+	let access = await aclClient.testPrivileges(lease.uuid, req.params.uuid, [Privilege.user.modify])
 	// console.log(access)
 	if (access.allowed === false) {
 		res.status(403).json()
